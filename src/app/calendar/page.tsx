@@ -142,8 +142,9 @@ export default function CalendarPage() {
   const [searchResults, setSearchResults] = useState<CatalogCourse[]>([]);
   const [searching, setSearching] = useState(false);
   const searchAbortRef = useRef<AbortController | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
-  // Load from localStorage
+  // Load from localStorage, then sync from Supabase
   useEffect(() => {
     const stored = loadSchedules();
     if (stored.length > 0) {
@@ -151,6 +152,22 @@ export default function CalendarPage() {
       setActiveId(stored[0].id);
     }
     setLoaded(true);
+
+    // Background sync from Supabase
+    setSyncing(true);
+    import("@/lib/store").then(({ syncFromSupabase }) => {
+      syncFromSupabase().then(() => {
+        const updated = loadSchedules();
+        if (updated.length > 0) {
+          setSchedules(updated);
+          setActiveId((prev) => {
+            if (prev && updated.some((s) => s.id === prev)) return prev;
+            return updated[0].id;
+          });
+        }
+        setSyncing(false);
+      }).catch(() => setSyncing(false));
+    });
   }, []);
 
   useEffect(() => {
@@ -160,7 +177,12 @@ export default function CalendarPage() {
   }, []);
 
   useEffect(() => {
-    if (loaded) saveSchedules(schedules);
+    if (loaded) {
+      saveSchedules(schedules);
+      import("@/lib/store").then(({ syncSchedulesToSupabase }) => {
+        syncSchedulesToSupabase(schedules);
+      });
+    }
   }, [schedules, loaded]);
 
   const activeSchedule = schedules.find((s) => s.id === activeId) ?? null;
@@ -477,6 +499,14 @@ export default function CalendarPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
+      {/* Syncing indicator */}
+      {syncing && (
+        <div className="flex items-center gap-2 border-b border-border bg-card/80 px-4 py-1.5 text-xs text-muted-foreground">
+          <div className="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary" />
+          Syncing your data...
+        </div>
+      )}
+
       {/* Slim vertical nav bar */}
       <div className="flex flex-1 overflow-hidden">
         <NavBar active="/calendar" />

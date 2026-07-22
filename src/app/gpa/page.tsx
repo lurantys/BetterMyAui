@@ -85,6 +85,7 @@ export default function CareerPage() {
   >([]);
   const [pastSchedules, setPastSchedules] = useState<SemesterSchedule[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "calendar" | "past">(
     "all"
@@ -112,11 +113,20 @@ export default function CareerPage() {
   const [searching, setSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load from localStorage
+  // Load from localStorage, then sync from Supabase
   useEffect(() => {
     setCalendarSchedules(loadSchedules());
     setPastSchedules(loadPastSchedules());
     setLoaded(true);
+
+    setSyncing(true);
+    import("@/lib/store").then(({ syncFromSupabase }) => {
+      syncFromSupabase().then(() => {
+        setCalendarSchedules(loadSchedules());
+        setPastSchedules(loadPastSchedules());
+        setSyncing(false);
+      }).catch(() => setSyncing(false));
+    });
   }, []);
 
   useEffect(() => {
@@ -125,6 +135,25 @@ export default function CareerPage() {
       setPastSchedules(loadPastSchedules());
     });
   }, []);
+
+  // Sync to Supabase on changes
+  useEffect(() => {
+    if (loaded) {
+      saveSchedules(calendarSchedules);
+      import("@/lib/store").then(({ syncSchedulesToSupabase }) => {
+        syncSchedulesToSupabase(calendarSchedules);
+      });
+    }
+  }, [calendarSchedules, loaded]);
+
+  useEffect(() => {
+    if (loaded) {
+      savePastSchedules(pastSchedules);
+      import("@/lib/store").then(({ syncPastSchedulesToSupabase }) => {
+        syncPastSchedulesToSupabase(pastSchedules);
+      });
+    }
+  }, [pastSchedules, loaded]);
 
   // Merge and sort all semesters
   const allSchedules = useMemo(() => {
@@ -367,6 +396,13 @@ export default function CareerPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
+      {syncing && (
+        <div className="flex items-center gap-2 border-b border-border bg-card/80 px-4 py-1.5 text-xs text-muted-foreground">
+          <div className="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary" />
+          Syncing your data...
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         <NavBar active="/gpa" />
 

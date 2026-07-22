@@ -7,75 +7,51 @@ datasource db {
   provider = "postgresql"
 }
 
-model Discipline {
-  id        String   @id @default(uuid()) @db.Uuid
-  code      String   @unique @db.VarChar(10)
-  name      String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  courses Course[]
-
-  @@map("disciplines")
-}
-
-model Course {
-  id             String   @id @default(uuid()) @db.Uuid
-  code           String   @unique @db.VarChar(20)
-  title          String   @db.VarChar(255)
-  credits        Decimal  @db.Decimal(3, 1)
-  description    String?
-  disciplineId   String   @map("discipline_id") @db.Uuid
-  prerequisiteRaw      String?  @map("prerequisite_raw")
-  prerequisiteCourses  Json     @default("[]") @map("prerequisite_courses")
-  corequisiteRaw       String?  @map("corequisite_raw")
-  corequisiteCourses   Json     @default("[]") @map("corequisite_courses")
-  classificationRequirement String? @map("classification_requirement") @db.VarChar(20)
-  otherRequirementNotes      String? @map("other_requirement_notes")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  discipline            Discipline            @relation(fields: [disciplineId], references: [id])
-  studentCourseRecords  StudentCourseRecord[]
-
-  @@index([disciplineId])
-  @@map("courses")
-}
-
-model GradingScale {
-  id          String  @id @default(uuid()) @db.Uuid
-  letterGrade String  @unique @map("letter_grade") @db.VarChar(5)
-  gpaPoints   Decimal  @map("gpa_points") @db.Decimal(3, 2)
-
-  @@map("grading_scale")
-}
-
 model Profile {
-  id             String  @id @db.Uuid
-  authUserId     String  @unique @map("auth_user_id") @db.Uuid
-  fullName       String  @map("full_name") @db.VarChar(255)
-  intendedMajors Json    @default("[]") @map("intended_majors")
-  intendedMinors Json    @default("[]") @map("intended_minors")
-  entrySemester  String? @map("entry_semester") @db.VarChar(20)
-  creditHours    Decimal  @default(0) @map("credit_hours") @db.Decimal(5, 1)
+  id          String   @id @db.Uuid
+  authUserId  String   @unique @map("auth_user_id") @db.Uuid
+  fullName    String   @map("full_name") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  studentCourseRecords StudentCourseRecord[]
+  semesters UserSemester[]
 
   @@map("profiles")
 }
 
-model StudentCourseRecord {
+model UserSemester {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
-  courseId   String   @map("course_id") @db.Uuid
-  semester  String   @db.VarChar(20)
-  grade     String?  @db.VarChar(5)
-  status    String   @default("completed") @db.VarChar(10)
+  type      String   @db.VarChar(10)
+  year      Int
+  term      String   @db.VarChar(10)
   createdAt DateTime @default(now()) @map("created_at")
 
-  user   Profile @relation(fields: [userId], references: [id])
-  course Course  @relation(fields: [courseId], references: [id])
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses UserCourse[]
 
-  @@unique([userId, courseId, semester])
+  @@unique([userId, type, year, term])
   @@index([userId])
-  @@index([courseId])
-  @@map("student_course_records")
+  @@map("user_semesters")
+}
+
+model UserCourse {
+  id                  String   @id @default(uuid()) @db.Uuid
+  semesterId          String   @map("semester_id") @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  code                String   @db.VarChar(20)
+  title               String   @db.VarChar(255)
+  credits             Decimal  @db.Decimal(3, 1)
+  description         String?
+  grade               String?  @db.VarChar(5)
+  gradePoints         Decimal? @map("grade_points") @db.Decimal(3, 2)
+  timeSlots           Json     @default("[]") @map("time_slots")
+  color               String?  @db.VarChar(20)
+  prerequisiteCourses Json     @default("[]") @map("prerequisite_courses")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  semester UserSemester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
+  @@index([semesterId])
+  @@index([userId])
+  @@map("user_courses")
 }

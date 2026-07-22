@@ -1,6 +1,7 @@
 "use client";
 
 // Shared data store with cross-tab sync via BroadcastChannel + localStorage.
+// Supabase is the source of truth; localStorage is a fast cache.
 
 // --- Calendar / scheduling types ---
 
@@ -333,4 +334,31 @@ export function getUnmetPrereqs(
   }
 
   return prereqs.filter((prereq) => !takenBefore.has(prereq.toUpperCase()));
+}
+
+// --- Supabase sync ---
+
+export async function syncFromSupabase(): Promise<void> {
+  const { loadPlannedSemesters, loadPastSemesters } = await import("@/lib/auth/data-actions");
+  try {
+    const [planned, past] = await Promise.all([loadPlannedSemesters(), loadPastSemesters()]);
+    saveSchedules(planned);
+    savePastSchedules(past);
+  } catch {
+    // Not logged in or network error — silently fall back to localStorage
+  }
+}
+
+export async function syncSchedulesToSupabase(schedules: SemesterSchedule[]): Promise<void> {
+  try {
+    const { savePlannedSemesters } = await import("@/lib/auth/data-actions");
+    await savePlannedSemesters(schedules);
+  } catch {}
+}
+
+export async function syncPastSchedulesToSupabase(schedules: SemesterSchedule[]): Promise<void> {
+  try {
+    const { savePastSemesters } = await import("@/lib/auth/data-actions");
+    await savePastSemesters(schedules);
+  } catch {}
 }

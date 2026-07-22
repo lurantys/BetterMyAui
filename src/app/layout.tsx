@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { AuthProvider } from "@/lib/auth/provider";
+import { createClient } from "@/lib/supabase/server";
+import { LoadingBar } from "@/components/loading-bar";
 
 export const metadata: Metadata = {
   title: "BetterJenzabar",
@@ -22,11 +25,14 @@ const themeScript = `
 })()
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -34,7 +40,10 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-background text-foreground font-sans antialiased">
         <ThemeProvider>
-          {children}
+          <AuthProvider initialUser={user}>
+            <LoadingBar />
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
