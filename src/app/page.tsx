@@ -3,8 +3,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CalendarDays, BookOpen, LayoutGrid, ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch {}
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
