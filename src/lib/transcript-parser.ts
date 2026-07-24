@@ -28,6 +28,14 @@ const VALID_GRADES = new Set([
   "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F", "P", "W", "I", "NG",
 ]);
 
+function creditsFromCode(code: string): number {
+  const m = code.match(/[A-Z]+(\d{4})/i);
+  if (m && m[1].length >= 2) {
+    return parseInt(m[1][1], 10) || 3;
+  }
+  return 3;
+}
+
 export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
   const buffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
@@ -193,7 +201,7 @@ export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
         courses.push({
           code: code.str,
           title: title || code.str,
-          credits: credit,
+          credits: creditsFromCode(code.str) || credit,
           grade,
         });
         if (bestGradeIdx >= 0) usedGrades.add(bestGradeIdx);
