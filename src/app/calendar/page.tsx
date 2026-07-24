@@ -31,6 +31,7 @@ import {
   type CatalogCourse,
   loadSchedules,
   saveSchedules,
+  loadPastSchedules,
   onStorageChange,
   generateId,
   getCourseColor,
@@ -129,6 +130,7 @@ const EMPTY_FORM: EventForm = {
 
 export default function CalendarPage() {
   const [schedules, setSchedules] = useState<SemesterSchedule[]>([]);
+  const [pastSchedules, setPastSchedules] = useState<SemesterSchedule[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -151,6 +153,7 @@ export default function CalendarPage() {
       setSchedules(stored);
       setActiveId(stored[0].id);
     }
+    setPastSchedules(loadPastSchedules());
     setLoaded(true);
 
     // Background sync from Supabase
@@ -165,6 +168,7 @@ export default function CalendarPage() {
             return updated[0].id;
           });
         }
+        setPastSchedules(loadPastSchedules());
         setSyncing(false);
       }).catch(() => setSyncing(false));
     });
@@ -415,6 +419,15 @@ export default function CalendarPage() {
     const sorted = sortSemestersChronologically(schedules);
     const activeIndex = sorted.findIndex((s) => s.id === activeSchedule.id);
     const takenBefore = new Set<string>();
+
+    // All past semesters count as "taken before" any planned semester
+    for (const sem of pastSchedules) {
+      for (const c of sem.courses) {
+        takenBefore.add(c.code.toUpperCase());
+      }
+    }
+
+    // Planned semesters before the active one also count
     for (let i = 0; i < activeIndex; i++) {
       for (const c of sorted[i].courses) {
         takenBefore.add(c.code.toUpperCase());
