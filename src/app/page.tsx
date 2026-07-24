@@ -47,7 +47,7 @@ export default async function Home() {
         <div className="flex flex-col items-center text-center max-w-2xl">
           {/* Logo */}
           <div className="relative mb-8">
-            <img src="/logoaui.png" alt="" className="h-20 w-auto" />
+            <img src="/logoaui.png" alt="" className="h-28 w-auto" />
           </div>
 
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
