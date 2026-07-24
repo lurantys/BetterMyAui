@@ -11,12 +11,14 @@ import {
   ChevronRight,
   Search,
   TrendingUp,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NavBar } from "@/components/nav-bar";
+import type { ParsedSemester } from "@/lib/transcript-parser";
 import {
   type CalendarEvent,
   type SemesterSchedule,
@@ -97,6 +99,14 @@ export default function CareerPage() {
     "fall"
   );
   const [pastYear, setPastYear] = useState(CURRENT_YEAR - 1);
+
+  // Transcript import
+  const [showImport, setShowImport] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [parsedSemesters, setParsedSemesters] = useState<ParsedSemester[]>([]);
+  const [selectedForImport, setSelectedForImport] = useState<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Add course to past semester
   const [showAddCourse, setShowAddCourse] = useState<string | null>(null);
@@ -248,6 +258,86 @@ export default function CareerPage() {
     setShowAddPast(false);
     setActiveId(sem.id);
   }, [pastTerm, pastYear, pastSchedules]);
+
+  // Transcript import handlers
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportLoading(true);
+    setImportError("");
+    try {
+      const { parseTranscript } = await import("@/lib/transcript-parser");
+      const semesters = await parseTranscript(file);
+      if (semesters.length === 0) {
+        setImportError("No semesters found in transcript.");
+      } else {
+        setParsedSemesters(semesters);
+        setSelectedForImport(new Set(semesters.map((_, i) => i)));
+      }
+    } catch {
+      setImportError("Failed to parse transcript. Please try a different file.");
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, []);
+
+  const toggleImportSelection = useCallback((index: number) => {
+    setSelectedForImport((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const handleImport = useCallback(() => {
+    const toImport = parsedSemesters.filter((_, i) => selectedForImport.has(i));
+    if (toImport.length === 0) return;
+
+    const newPast: SemesterSchedule[] = toImport.map((sem) => ({
+      id: generateId(),
+      term: sem.term,
+      year: sem.year,
+      courses: sem.courses.map((c) => ({
+        id: generateId(),
+        code: c.code,
+        title: c.title,
+        credits: c.credits,
+        daysOfWeek: [],
+        startTime: "",
+        endTime: "",
+        location: "",
+        color: getCourseColor(c.code),
+        prerequisite_courses: [],
+        grade: c.grade,
+        gradePoints: GRADE_OPTIONS.find((g) => g.letter === c.grade)?.points ?? null,
+      })),
+    }));
+
+    setPastSchedules((prev) => {
+      const existing = new Map(prev.map((s) => [`${s.term}-${s.year}`, s]));
+      for (const sem of newPast) {
+        const key = `${sem.term}-${sem.year}`;
+        if (existing.has(key)) {
+          const existingSem = existing.get(key)!;
+          const existingCodes = new Set(existingSem.courses.map((c) => c.code));
+          const newCourses = sem.courses.filter((c) => !existingCodes.has(c.code));
+          existing.set(key, {
+            ...existingSem,
+            courses: [...existingSem.courses, ...newCourses],
+          });
+        } else {
+          existing.set(key, sem);
+        }
+      }
+      return Array.from(existing.values());
+    });
+
+    setShowImport(false);
+    setParsedSemesters([]);
+    setSelectedForImport(new Set());
+  }, [parsedSemesters, selectedForImport]);
 
   // Add course to past semester
   const addCourse = useCallback(() => {
@@ -481,13 +571,22 @@ export default function CareerPage() {
                 {activeTab !== "calendar" && (
                   <>
                     {!showAddPast ? (
-                      <button
-                        onClick={() => setShowAddPast(true)}
-                        className="flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add past semester</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setShowAddPast(true)}
+                          className="flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Add past semester</span>
+                        </button>
+                        <button
+                          onClick={() => setShowImport(true)}
+                          className="flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                        >
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>Import transcript</span>
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1">
                         <select
@@ -938,6 +1037,150 @@ export default function CareerPage() {
           </div>
         </div>
       </main>
+
+      {/* Transcript Import Modal */}
+      {showImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-border bg-card shadow-xl flex flex-col">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="text-lg font-semibold">Import Transcript</h2>
+              <button
+                onClick={() => { setShowImport(false); setParsedSemesters([]); setSelectedForImport(new Set()); }}
+                className="rounded p-1 text-muted-foreground hover:text-foreground"
+              >
+                <span className="text-lg">&times;</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {parsedSemesters.length === 0 && !importLoading && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Upload className="mb-4 h-10 w-10 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Upload your unofficial transcript (PDF)
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={importLoading}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {importLoading ? "Parsing..." : "Choose PDF file"}
+                  </button>
+                  {importError && (
+                    <p className="mt-3 text-sm text-destructive">{importError}</p>
+                  )}
+                </div>
+              )}
+
+              {importLoading && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                  <p className="text-sm text-muted-foreground">Reading transcript...</p>
+                </div>
+              )}
+
+              {parsedSemesters.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Found {parsedSemesters.reduce((sum, s) => sum + s.courses.length, 0)} courses across {parsedSemesters.length} semesters
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedForImport(new Set(parsedSemesters.map((_, i) => i)))}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Select all
+                      </button>
+                      <button
+                        onClick={() => setSelectedForImport(new Set())}
+                        className="text-xs text-muted-foreground hover:underline"
+                      >
+                        Deselect all
+                      </button>
+                    </div>
+                  </div>
+
+                  {parsedSemesters.map((sem, semIdx) => (
+                    <div key={semIdx} className="rounded-lg border border-border">
+                      <button
+                        onClick={() => toggleImportSelection(semIdx)}
+                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                          selectedForImport.has(semIdx) ? "bg-primary/5" : "bg-muted/50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedForImport.has(semIdx)}
+                          onChange={() => toggleImportSelection(semIdx)}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium text-foreground">
+                          {sem.year} {sem.term.charAt(0).toUpperCase() + sem.term.slice(1)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {sem.courses.length} courses
+                        </span>
+                      </button>
+
+                      {selectedForImport.has(semIdx) && (
+                        <div className="border-t border-border">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-muted-foreground">
+                                <th className="px-4 py-1.5 text-left font-medium">Code</th>
+                                <th className="px-4 py-1.5 text-left font-medium">Title</th>
+                                <th className="px-4 py-1.5 text-center font-medium">Cr</th>
+                                <th className="px-4 py-1.5 text-center font-medium">Grade</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sem.courses.map((c, cIdx) => (
+                                <tr key={cIdx} className="border-t border-border/50">
+                                  <td className="px-4 py-1.5 font-mono font-medium text-foreground">{c.code}</td>
+                                  <td className="px-4 py-1.5 text-muted-foreground">{c.title}</td>
+                                  <td className="px-4 py-1.5 text-center text-foreground">{c.credits}</td>
+                                  <td className="px-4 py-1.5 text-center font-medium text-foreground">{c.grade}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {parsedSemesters.length > 0 && (
+              <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setShowImport(false); setParsedSemesters([]); setSelectedForImport(new Set()); }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleImport}
+                  disabled={selectedForImport.size === 0}
+                >
+                  Import {selectedForImport.size} semester{selectedForImport.size !== 1 ? "s" : ""}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
