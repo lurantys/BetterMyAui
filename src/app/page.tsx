@@ -13,13 +13,7 @@ export default async function Home() {
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       {/* Nav */}
-      <header className="flex items-center justify-between px-6 py-5 sm:px-10">
-        <div className="flex items-center gap-2.5">
-          <img src="/logoaui.png" alt="" className="h-7 w-auto" />
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            BetterJenzabar
-          </span>
-        </div>
+      <header className="flex items-center justify-end px-6 py-5 sm:px-10">
         <div className="flex items-center gap-3">
           <ThemeToggle />
           {user ? (
