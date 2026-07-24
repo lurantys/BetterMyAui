@@ -13,6 +13,7 @@ import {
   BookOpen,
   LayoutGrid,
   Info,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,6 +139,9 @@ export default function CalendarPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailEventId, setDetailEventId] = useState<string | null>(null);
 
   // Catalog search in left panel
   const [searchQuery, setSearchQuery] = useState("");
@@ -332,9 +336,10 @@ export default function CalendarPage() {
 
   const handleEventClick = useCallback(
     (info: { event: { id: string } }) => {
-      openEditModal(info.event.id);
+      setDetailEventId(info.event.id);
+      setShowDetailModal(true);
     },
-    [openEditModal]
+    []
   );
 
   // Add course from catalog — opens modal pre-filled for time selection
@@ -622,7 +627,10 @@ export default function CalendarPage() {
                         <div
                           key={ev.id}
                           className="border-b border-border px-3 py-2.5 hover:bg-accent/50 transition-colors cursor-pointer"
-                          onClick={() => openEditModal(ev.id)}
+                          onClick={() => {
+                            setDetailEventId(ev.id);
+                            setShowDetailModal(true);
+                          }}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
@@ -815,6 +823,122 @@ export default function CalendarPage() {
           )}
         </main>
       </div>
+
+      {/* Course Detail Modal */}
+      {showDetailModal && detailEventId && activeSchedule && (() => {
+        const ev = activeSchedule.courses.find((c) => c.id === detailEventId);
+        if (!ev) return null;
+        const unmet = prereqStatus.get(ev.id);
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => { setShowDetailModal(false); setDetailEventId(null); }}
+          >
+            <div
+              className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="h-3 w-3 rounded-full shrink-0"
+                    style={{ backgroundColor: ev.color }}
+                  />
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">{ev.code}</h2>
+                    <p className="text-xs text-muted-foreground">{ev.title}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setShowDetailModal(false); setDetailEventId(null); }}
+                  className="rounded p-1 text-muted-foreground hover:text-foreground"
+                >
+                  <span className="text-lg">&times;</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-accent/50 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Credits</p>
+                    <p className="mt-0.5 text-sm font-semibold text-foreground">{ev.credits}</p>
+                  </div>
+                  <div className="rounded-lg bg-accent/50 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Location</p>
+                    <p className="mt-0.5 text-sm font-semibold text-foreground">{ev.location || "—"}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-accent/50 p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Schedule</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
+                    {ev.daysOfWeek.map((d) => DAY_MAP[d]).join("/")}{" "}
+                    {formatTime12(ev.startTime)}–{formatTime12(ev.endTime)}
+                  </p>
+                </div>
+
+                {ev.prerequisite_courses && ev.prerequisite_courses.length > 0 && (
+                  <div className="rounded-lg bg-accent/50 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Prerequisites</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {ev.prerequisite_courses.map((p) => (
+                        <span
+                          key={p}
+                          className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                        >
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {unmet && unmet.length > 0 && (
+                  <div className="rounded-lg bg-status-missing/10 p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-status-missing">Missing Prerequisites</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {unmet.map((p) => (
+                        <span
+                          key={p}
+                          className="inline-flex items-center rounded-md bg-status-missing/15 px-2 py-0.5 text-xs font-medium text-status-missing"
+                        >
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setDetailEventId(null);
+                      handleDelete(ev.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setDetailEventId(null);
+                      openEditModal(ev.id);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Add/Edit Custom Event Modal */}
       {showModal && (
