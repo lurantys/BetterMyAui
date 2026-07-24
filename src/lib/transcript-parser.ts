@@ -24,29 +24,9 @@ interface TextItem {
   y: number;
 }
 
-// Column x-ranges (pymupdf coords, pdfjs inverts y but x stays same)
-const CODE_X_MAX = 120;
-const TITLE_X_MIN = 120;
-const TITLE_X_MAX = 250;
-const GRADE_X_MIN = 275;
-const GRADE_X_MAX = 330;
-const CREDIT_X_MIN = 330;
-const CREDIT_X_MAX = 370;
-
 const VALID_GRADES = new Set([
   "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F", "P", "W", "I", "NG",
 ]);
-
-function classifyItem(item: TextItem): "code" | "title" | "grade" | "credit" | "other" {
-  const t = item.str.trim();
-  if (!t) return "other";
-
-  if (item.x < CODE_X_MAX && /^[A-Z]{2,4}\d{4}(-L)?$/i.test(t)) return "code";
-  if (item.x >= GRADE_X_MIN && item.x < GRADE_X_MAX && VALID_GRADES.has(t.toUpperCase())) return "grade";
-  if (item.x >= CREDIT_X_MIN && item.x < CREDIT_X_MAX && /^\d+\.\d{2}$/.test(t)) return "credit";
-  if (item.x >= TITLE_X_MIN && item.x < TITLE_X_MAX && t.length > 1) return "title";
-  return "other";
-}
 
 export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
   const buffer = await file.arrayBuffer();
@@ -60,109 +40,172 @@ export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
     for (const item of content.items) {
       if ("str" in item && item.str.trim()) {
         const tx = item.transform;
-        // pdfjs y is bottom-up, convert to top-down for consistency
         allItems.push({
           str: item.str.trim(),
           x: tx[4],
-          y: -tx[5],
+          y: tx[5],
         });
       }
     }
   }
 
-  // Sort by y (top to bottom), then x (left to right)
-  allItems.sort((a, b) => a.y - b.y || a.x - b.x);
-
-  // Group into rows by y-proximity (tolerance ~6 units)
-  const rows: TextItem[][] = [];
-  let currentRow: TextItem[] = [];
-  let lastY = -Infinity;
-  const Y_TOLERANCE = 6;
-
-  for (const item of allItems) {
-    if (Math.abs(item.y - lastY) > Y_TOLERANCE && currentRow.length > 0) {
-      currentRow.sort((a, b) => a.x - b.x);
-      rows.push(currentRow);
-      currentRow = [];
+  // Find semester boundaries using the full text
+  // pdfjs y is bottom-up, so sort by y DESCENDING to go top-to-page
+  const linesByY = [...allItems].sort((a, b) => b.y - a.y || a.x - b.x);
+  const lineTexts: { text: string; y: number }[] = [];
+  let lastY = Infinity;
+  let currentLine: TextItem[] = [];
+  for (const item of linesByY) {
+    if (currentLine.length > 0 && Math.abs(item.y - lastY) > 3) {
+      currentLine.sort((a, b) => a.x - b.x);
+      lineTexts.push({ text: currentLine.map((it) => it.str).join(" "), y: lastY });
+      currentLine = [];
     }
-    currentRow.push(item);
+    currentLine.push(item);
     lastY = item.y;
   }
-  if (currentRow.length > 0) {
-    currentRow.sort((a, b) => a.x - b.x);
-    rows.push(currentRow);
+  if (currentLine.length > 0) {
+    currentLine.sort((a, b) => a.x - b.x);
+    lineTexts.push({ text: currentLine.map((it) => it.str).join(" "), y: lastY });
   }
 
-  // Find semester header rows
-  const semesterRowIndices: { index: number; term: "fall" | "spring" | "summer"; year: number }[] = [];
-  for (let i = 0; i < rows.length; i++) {
-    const rowText = rows[i].map((r) => r.str).join(" ");
-    const m = rowText.match(SEMESTER_RE);
+  // Find semester header y-positions
+  const semHeaders: { y: number; term: "fall" | "spring" | "summer"; year: number; label: string }[] = [];
+  for (const line of lineTexts) {
+    const m = line.text.match(SEMESTER_RE);
     if (m) {
-      semesterRowIndices.push({
-        index: i,
+      semHeaders.push({
+        y: line.y,
         year: parseInt(m[1]),
         term: m[2].toLowerCase() as "fall" | "spring" | "summer",
+        label: m[0],
       });
     }
   }
 
-  // Process each semester section
+  // Separate items by type using x-position classification
+  const codeItems: TextItem[] = [];
+  const titleItems: TextItem[] = [];
+  const gradeItems: TextItem[] = [];
+  const creditItems: TextItem[] = [];
+
+  for (const item of allItems) {
+    const t = item.str.trim();
+    if (!t) continue;
+
+    // Course codes: leftmost column
+    if (item.x < 120 && /^[A-Z]{2,4}\d{4}(-L)?$/i.test(t)) {
+      codeItems.push({ str: t.toUpperCase(), x: item.x, y: item.y });
+    }
+    // Grades: in the grade column
+    else if (item.x >= 275 && item.x < 320 && VALID_GRADES.has(t.toUpperCase())) {
+      gradeItems.push({ str: t.toUpperCase(), x: item.x, y: item.y });
+    }
+    // Credits: in the credit column, first value per row
+    else if (item.x >= 330 && item.x < 370 && /^\d+\.\d{2}$/.test(t)) {
+      const val = parseFloat(t);
+      if (val > 0 && val <= 6) {
+        creditItems.push({ str: t, x: item.x, y: item.y });
+      }
+    }
+    // Titles: title column area, exclude keywords
+    else if (
+      item.x >= 120 && item.x < 260 &&
+      t.length > 1 &&
+      !/Academic|Year|Semester|Term|Totals|Career|Division|Honors|Dean|Course|Number|CR|Type|Grade|Rpt|Hrs|Att|Ern|Gpa|Qual|Pts|GPA/i.test(t) &&
+      !/^\d/.test(t)
+    ) {
+      titleItems.push({ str: t, x: item.x, y: item.y });
+    }
+  }
+
+  // For each semester, find codes within its y-range, then match closest grade/credit/title
   const semesters: ParsedSemester[] = [];
 
-  for (let s = 0; s < semesterRowIndices.length; s++) {
-    const startRow = semesterRowIndices[s].index + 1;
-    const endRow = s + 1 < semesterRowIndices.length
-      ? semesterRowIndices[s + 1].index
-      : rows.length;
+  for (let s = 0; s < semHeaders.length; s++) {
+    const headerY = semHeaders[s].y;
+    // Semester ends at next header (or bottom of page, i.e. very low y in pdfjs coords)
+    const nextHeaderY = s + 1 < semHeaders.length ? semHeaders[s + 1].y : -9999;
+
+    // In pdfjs coords, y increases upward. So "below header" means y < headerY, "above next header" means y > nextHeaderY
+    const codesInSection = codeItems.filter(
+      (c) => c.y < headerY && c.y > nextHeaderY
+    );
+
+    // Sort codes top-to-bottom (descending y)
+    codesInSection.sort((a, b) => b.y - a.y);
+
+    const usedGrades = new Set<number>();
+    const usedCredits = new Set<number>();
+    const usedTitles = new Set<number>();
 
     const courses: ParsedCourse[] = [];
 
-    for (let r = startRow; r < endRow; r++) {
-      const row = rows[r];
-      const rowText = row.map((it) => it.str).join(" ");
-
-      // Stop at totals
-      if (/Term\s+Totals|Career\s+Totals|Division\s+Career/i.test(rowText)) break;
-
-      // Classify each item in the row
-      let code = "";
-      let title = "";
-      let grade = "";
-      let credit = 0;
-
-      for (const item of row) {
-        const cls = classifyItem(item);
-        const t = item.str.trim();
-        if (cls === "code") code = t.toUpperCase();
-        else if (cls === "grade") grade = t.toUpperCase();
-        else if (cls === "credit" && credit === 0) credit = parseFloat(t);
-        else if (cls === "title") {
-          // Append multi-word titles (items at similar x on same row)
-          title += (title ? " " : "") + t;
+    for (const code of codesInSection) {
+      // Find closest grade by y-distance
+      let bestGradeIdx = -1;
+      let bestGradeDist = Infinity;
+      for (let gi = 0; gi < gradeItems.length; gi++) {
+        if (usedGrades.has(gi)) continue;
+        const dist = Math.abs(gradeItems[gi].y - code.y);
+        if (dist < bestGradeDist && dist < 10) {
+          bestGradeDist = dist;
+          bestGradeIdx = gi;
         }
       }
 
-      // Only add if we found a valid course code and grade
-      if (code && grade && VALID_GRADES.has(grade)) {
-        // Skip withdrawn / no-grade
-        if (grade === "W" || grade === "NG") continue;
+      // Find closest credit by y-distance
+      let bestCreditIdx = -1;
+      let bestCreditDist = Infinity;
+      for (let ci = 0; ci < creditItems.length; ci++) {
+        if (usedCredits.has(ci)) continue;
+        const dist = Math.abs(creditItems[ci].y - code.y);
+        if (dist < bestCreditDist && dist < 10) {
+          bestCreditDist = dist;
+          bestCreditIdx = ci;
+        }
+      }
 
+      // Find all title items close in y, then concatenate them left-to-right
+      const nearbyTitles: TextItem[] = [];
+      for (let ti = 0; ti < titleItems.length; ti++) {
+        if (usedTitles.has(ti)) continue;
+        const dist = Math.abs(titleItems[ti].y - code.y);
+        if (dist < 10) {
+          nearbyTitles.push(titleItems[ti]);
+          usedTitles.add(ti);
+        }
+      }
+      nearbyTitles.sort((a, b) => a.x - b.x);
+      const title = nearbyTitles.map((t) => t.str).join(" ");
+
+      const grade = bestGradeIdx >= 0 ? gradeItems[bestGradeIdx].str : "";
+      const credit = bestCreditIdx >= 0 ? parseFloat(creditItems[bestCreditIdx].str) : 3;
+
+      // Skip non-graded courses
+      if (grade === "NG" || grade === "W") {
+        if (bestGradeIdx >= 0) usedGrades.add(bestGradeIdx);
+        if (bestCreditIdx >= 0) usedCredits.add(bestCreditIdx);
+        continue;
+      }
+
+      if (grade) {
         courses.push({
-          code,
-          title: title || code,
-          credits: credit || 3,
+          code: code.str,
+          title: title || code.str,
+          credits: credit,
           grade,
         });
+        if (bestGradeIdx >= 0) usedGrades.add(bestGradeIdx);
+        if (bestCreditIdx >= 0) usedCredits.add(bestCreditIdx);
       }
     }
 
     if (courses.length > 0) {
-      const { term, year } = semesterRowIndices[s];
       semesters.push({
-        label: `${year} ${term.charAt(0).toUpperCase() + term.slice(1)}`,
-        term,
-        year,
+        label: semHeaders[s].label,
+        term: semHeaders[s].term,
+        year: semHeaders[s].year,
         courses,
       });
     }
