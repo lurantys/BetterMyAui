@@ -78,6 +78,26 @@ function timeToMinutes(t: string): number {
   return h * 60 + m;
 }
 
+function minutesToTime(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+}
+
+function getDefaultDuration(days: number[]): number {
+  const hasMWF = days.some((d) => d === 1 || d === 3 || d === 5);
+  const hasTTh = days.some((d) => d === 2 || d === 4);
+  if (hasTTh && !hasMWF) return 80;
+  return 50;
+}
+
+function getEndTimeForStart(start: string, days: number[]): string {
+  const duration = getDefaultDuration(days);
+  const endMins = timeToMinutes(start) + duration;
+  const clamped = Math.min(endMins, timeToMinutes("20:00"));
+  return minutesToTime(clamped);
+}
+
 function formatTime12(t: string): string {
   const [h, m] = t.split(":").map(Number);
   const period = h >= 12 ? "PM" : "AM";
@@ -122,9 +142,9 @@ const EMPTY_FORM: EventForm = {
   code: "",
   title: "",
   credits: "3",
-  daysOfWeek: [1, 3],
+  daysOfWeek: [1, 3, 5],
   startTime: "09:00",
-  endTime: "10:15",
+  endTime: "09:50",
   location: "",
   prerequisite_courses: [],
 };
@@ -325,12 +345,16 @@ export default function CalendarPage() {
   );
 
   const toggleDay = useCallback((day: number) => {
-    setForm((prev) => ({
-      ...prev,
-      daysOfWeek: prev.daysOfWeek.includes(day)
+    setForm((prev) => {
+      const newDays = prev.daysOfWeek.includes(day)
         ? prev.daysOfWeek.filter((d) => d !== day)
-        : [...prev.daysOfWeek, day].sort(),
-    }));
+        : [...prev.daysOfWeek, day].sort();
+      return {
+        ...prev,
+        daysOfWeek: newDays,
+        endTime: getEndTimeForStart(prev.startTime, newDays),
+      };
+    });
     setErrors((prev) => ({ ...prev, days: "" }));
   }, []);
 
@@ -1049,9 +1073,11 @@ export default function CalendarPage() {
                   <select
                     value={form.startTime}
                     onChange={(e) => {
+                      const start = e.target.value;
                       setForm((prev) => ({
                         ...prev,
-                        startTime: e.target.value,
+                        startTime: start,
+                        endTime: getEndTimeForStart(start, prev.daysOfWeek),
                       }));
                       setErrors((prev) => ({ ...prev, time: "" }));
                     }}
