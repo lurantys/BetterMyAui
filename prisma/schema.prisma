@@ -11,6 +11,8 @@ model Profile {
   id          String   @id @db.Uuid
   authUserId  String   @unique @map("auth_user_id") @db.Uuid
   fullName    String   @map("full_name") @db.VarChar(255)
+  major       String?  @db.VarChar(255)
+  minor       String?  @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at")
 
   semesters UserSemester[]

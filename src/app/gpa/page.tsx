@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NavBar } from "@/components/nav-bar";
+import { getProfile, updateProfile } from "@/lib/auth/actions";
 import type { ParsedSemester } from "@/lib/transcript-parser";
 import {
   type CalendarEvent,
@@ -108,6 +109,25 @@ export default function CareerPage() {
   const [selectedForImport, setSelectedForImport] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Profile
+  const [profile, setProfile] = useState<{ fullName: string; major: string | null; minor: string | null } | null>(null);
+  const [editMajor, setEditMajor] = useState(false);
+  const [editMinor, setEditMinor] = useState(false);
+  const [majorValue, setMajorValue] = useState("");
+  const [minorValue, setMinorValue] = useState("");
+
+  const saveMajor = useCallback(async () => {
+    await updateProfile({ major: majorValue.trim() || undefined });
+    setProfile((p) => p ? { ...p, major: majorValue.trim() || null } : p);
+    setEditMajor(false);
+  }, [majorValue]);
+
+  const saveMinor = useCallback(async () => {
+    await updateProfile({ minor: minorValue.trim() || undefined });
+    setProfile((p) => p ? { ...p, minor: minorValue.trim() || null } : p);
+    setEditMinor(false);
+  }, [minorValue]);
+
   // Add course to past semester
   const [showAddCourse, setShowAddCourse] = useState<string | null>(null);
   const [newCourseCode, setNewCourseCode] = useState("");
@@ -128,6 +148,14 @@ export default function CareerPage() {
     setCalendarSchedules(loadSchedules());
     setPastSchedules(loadPastSchedules());
     setLoaded(true);
+
+    getProfile().then((p) => {
+      if (p) {
+        setProfile({ fullName: p.fullName, major: p.major, minor: p.minor });
+        setMajorValue(p.major ?? "");
+        setMinorValue(p.minor ?? "");
+      }
+    });
 
     setSyncing(true);
     import("@/lib/store").then(({ syncFromSupabase }) => {
@@ -931,6 +959,67 @@ export default function CareerPage() {
 
             {/* Sidebar */}
             <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+              {/* Personal Info */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Personal Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Name</span>
+                    <p className="text-sm font-medium text-foreground">{profile?.fullName ?? "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Major</span>
+                    {editMajor ? (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <Input
+                          value={majorValue}
+                          onChange={(e) => setMajorValue(e.target.value)}
+                          placeholder="e.g. Computer Science"
+                          className="h-7 text-xs"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === "Enter") saveMajor(); if (e.key === "Escape") { setEditMajor(false); setMajorValue(profile?.major ?? ""); }}}
+                        />
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={saveMajor}>Save</Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditMajor(true); setMajorValue(profile?.major ?? ""); }}
+                        className="mt-0.5 block w-full text-left text-sm text-foreground hover:text-primary transition-colors"
+                      >
+                        {profile?.major || <span className="text-muted-foreground italic">Click to add</span>}
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Minor</span>
+                    {editMinor ? (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <Input
+                          value={minorValue}
+                          onChange={(e) => setMinorValue(e.target.value)}
+                          placeholder="e.g. Mathematics"
+                          className="h-7 text-xs"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === "Enter") saveMinor(); if (e.key === "Escape") { setEditMinor(false); setMinorValue(profile?.minor ?? ""); }}}
+                        />
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={saveMinor}>Save</Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditMinor(true); setMinorValue(profile?.minor ?? ""); }}
+                        className="mt-0.5 block w-full text-left text-sm text-foreground hover:text-primary transition-colors"
+                      >
+                        {profile?.minor || <span className="text-muted-foreground italic">Click to add</span>}
+                      </button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">

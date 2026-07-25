@@ -68,3 +68,48 @@ export async function getUser() {
   } = await supabase.auth.getUser();
   return user;
 }
+
+export async function getProfile() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  let profile = await prisma.profile.findUnique({
+    where: { authUserId: user.id },
+  });
+
+  if (!profile) {
+    profile = await prisma.profile.create({
+      data: {
+        id: user.id,
+        authUserId: user.id,
+        fullName: user.user_metadata?.full_name ?? user.email ?? "Student",
+      },
+    });
+  }
+
+  return profile;
+}
+
+export async function updateProfile(fields: { major?: string; minor?: string }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  await prisma.profile.upsert({
+    where: { authUserId: user.id },
+    update: fields,
+    create: {
+      id: user.id,
+      authUserId: user.id,
+      fullName: user.user_metadata?.full_name ?? user.email ?? "Student",
+      ...fields,
+    },
+  });
+
+  return { success: true };
+}
