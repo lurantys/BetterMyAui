@@ -43,33 +43,33 @@
 }
 
 .dark {
-  /* Dark — lifted blacks, subtle warmth, clear hierarchy */
-  --background: #111214;
-  --foreground: #ececef;
-  --card: #1a1b1f;
-  --card-foreground: #ececef;
-  --popover: #1a1b1f;
-  --popover-foreground: #ececef;
+  /* Dark — Discord-inspired grayish */
+  --background: #313338;
+  --foreground: #dbdee1;
+  --card: #2b2d31;
+  --card-foreground: #dbdee1;
+  --popover: #2b2d31;
+  --popover-foreground: #dbdee1;
   --primary: #34d87a;
   --primary-foreground: #0a0a0a;
-  --secondary: #22232a;
-  --secondary-foreground: #d4d4d8;
-  --muted: #1e1f24;
-  --muted-foreground: #8b8d97;
-  --accent: #22232a;
-  --accent-foreground: #d4d4d8;
+  --secondary: #383a40;
+  --secondary-foreground: #b5bac1;
+  --muted: #35373c;
+  --muted-foreground: #80848e;
+  --accent: #383a40;
+  --accent-foreground: #b5bac1;
   --destructive: #f87171;
   --destructive-foreground: #fafafa;
-  --border: #2a2b32;
-  --input: #2a2b32;
+  --border: #3f4147;
+  --input: #3f4147;
   --ring: #34d87a;
 
   --status-met: #34d87a;
-  --status-met-bg: #0f2a1c;
+  --status-met-bg: #1a3a28;
   --status-missing: #fbbf24;
-  --status-missing-bg: #1f1a08;
+  --status-missing-bg: #3a3320;
   --status-info: #60a5fa;
-  --status-info-bg: #0f1a2e;
+  --status-info-bg: #1e2a42;
 }
 
 @theme inline {
