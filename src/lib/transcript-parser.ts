@@ -29,7 +29,7 @@ const VALID_GRADES = new Set([
 ]);
 
 function creditsFromCode(code: string): number {
-  const m = code.match(/[A-Z]+(\d{4})/i);
+  const m = code.match(/[A-Z]+\s*(\d{4})/i);
   if (m && m[1].length >= 2) {
     return parseInt(m[1][1], 10) || 3;
   }
@@ -103,7 +103,8 @@ export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
 
     // Course codes: leftmost column
     if (item.x < 120 && /^[A-Z]{2,4}\d{4}(-L)?$/i.test(t)) {
-      codeItems.push({ str: t.toUpperCase(), x: item.x, y: item.y });
+      const normalized = t.replace(/^([A-Z]+)(\d)/i, "$1 $2").toUpperCase();
+      codeItems.push({ str: normalized, x: item.x, y: item.y });
     }
     // Grades: in the grade column
     else if (item.x >= 275 && item.x < 320 && VALID_GRADES.has(t.toUpperCase())) {
