@@ -291,28 +291,41 @@ export default function CareerPage() {
     });
   }, []);
 
-  const handleImport = useCallback(() => {
+  const handleImport = useCallback(async () => {
     const toImport = parsedSemesters.filter((_, i) => selectedForImport.has(i));
     if (toImport.length === 0) return;
+
+    // Fetch catalog to enrich courses with correct titles, credits, prereqs
+    let catalogMap: Map<string, CatalogCourse> = new Map();
+    try {
+      const res = await fetch("/api/courses");
+      const data = await res.json();
+      for (const c of data.courses ?? []) {
+        catalogMap.set(c.code.toUpperCase(), c);
+      }
+    } catch {}
 
     const newPast: SemesterSchedule[] = toImport.map((sem) => ({
       id: generateId(),
       term: sem.term,
       year: sem.year,
-      courses: sem.courses.map((c) => ({
-        id: generateId(),
-        code: c.code,
-        title: c.title,
-        credits: c.credits,
-        daysOfWeek: [],
-        startTime: "",
-        endTime: "",
-        location: "",
-        color: getCourseColor(c.code),
-        prerequisite_courses: [],
-        grade: c.grade,
-        gradePoints: GRADE_OPTIONS.find((g) => g.letter === c.grade)?.points ?? null,
-      })),
+      courses: sem.courses.map((c) => {
+        const catalog = catalogMap.get(c.code.toUpperCase());
+        return {
+          id: generateId(),
+          code: c.code,
+          title: catalog?.title || c.title,
+          credits: catalog?.credits || c.credits,
+          daysOfWeek: [],
+          startTime: "",
+          endTime: "",
+          location: "",
+          color: getCourseColor(c.code),
+          prerequisite_courses: catalog?.prerequisite_courses ?? [],
+          grade: c.grade,
+          gradePoints: GRADE_OPTIONS.find((g) => g.letter === c.grade)?.points ?? null,
+        };
+      }),
     }));
 
     setPastSchedules((prev) => {
