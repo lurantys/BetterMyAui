@@ -10,6 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "@/lib/theme-provider";
 import { useUser } from "@/lib/auth/provider";
 import { signOut } from "@/lib/auth/actions";
 
@@ -23,6 +24,7 @@ export function NavBar({ active }: { active: string }) {
   const [expanded, setExpanded] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const user = useUser();
+  const { resolvedTheme } = useTheme();
 
   return (
     <nav
@@ -36,7 +38,7 @@ export function NavBar({ active }: { active: string }) {
           <div className="relative flex items-center justify-center">
             <a href="/" className="shrink-0">
               <img
-                src="/logoaui.png"
+                src={resolvedTheme === "dark" ? "/logowhiteaui.png" : "/logoaui.png"}
                 alt="BetterJenzabar"
                 className="h-12 w-auto"
               />
