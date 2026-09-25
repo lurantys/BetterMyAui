@@ -207,7 +207,7 @@ export default function Home() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader hasData={hasData} />
 
-      <main className="flex-1 px-6 py-10 sm:px-10 sm:py-14">
+      <main className="flex min-h-0 flex-1 flex-col px-6 py-6 sm:px-10 sm:py-8">
         {!hydrated ? (
           <LoadingState />
         ) : hasData ? (
@@ -222,7 +222,9 @@ export default function Home() {
             alerts={alerts}
           />
         ) : (
-          <Welcome />
+          <div className="flex flex-1 items-center">
+            <Welcome />
+          </div>
         )}
       </main>
 
@@ -271,7 +273,7 @@ function LoadingState() {
 function Welcome() {
   return (
     <div className="mx-auto max-w-6xl">
-      <section className="grid gap-12 border-b border-border/70 pb-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-20 lg:pb-24">
+      <section className="grid w-full gap-12 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-20 lg:py-12">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">
             Academic planning for AUI
@@ -284,28 +286,30 @@ function Welcome() {
           </p>
         </div>
 
-        <div className="border-y border-border/70 py-2">
+        <div className="py-2">
           <p className="px-1 py-4 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Start with one action
           </p>
-          <StartAction
-            href="/calendar"
-            icon={<CalendarDays className="h-4 w-4" />}
-            title="Create your first semester"
-            description="Choose a term and start shaping your week."
-          />
-          <StartAction
-            href="/gpa"
-            icon={<Upload className="h-4 w-4" />}
-            title="Import your transcript"
-            description="Bring in completed courses and calculate your GPA."
-          />
-          <StartAction
-            href="/catalog"
-            icon={<BookOpen className="h-4 w-4" />}
-            title="Explore the catalog"
-            description="Search every AUI course and check its prerequisites."
-          />
+          <div className="divide-y divide-border/60">
+            <StartAction
+              href="/calendar"
+              icon={<CalendarDays className="h-4 w-4" />}
+              title="Create your first semester"
+              description="Choose a term and start shaping your week."
+            />
+            <StartAction
+              href="/gpa"
+              icon={<Upload className="h-4 w-4" />}
+              title="Import your transcript"
+              description="Bring in completed courses and calculate your GPA."
+            />
+            <StartAction
+              href="/catalog"
+              icon={<BookOpen className="h-4 w-4" />}
+              title="Explore the catalog"
+              description="Search every AUI course and check its prerequisites."
+            />
+          </div>
         </div>
       </section>
     </div>
@@ -326,7 +330,7 @@ function StartAction({
   return (
     <Link
       href={href}
-      className="group flex items-center gap-4 border-t border-border/60 px-1 py-5 transition-colors last:border-b hover:bg-accent/35"
+      className="group flex items-center gap-4 px-1 py-5 transition-colors hover:bg-accent/35"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
         {icon}
