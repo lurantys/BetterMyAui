@@ -18,8 +18,28 @@ const navItems = [
   { href: "/gpa", icon: LayoutGrid, label: "My Career" },
 ];
 
+const SIDEBAR_STORAGE_KEY = "jenzabar_plus_sidebar_expanded";
+
 export function NavBar({ active }: { active: string }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const saved = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      return saved === null ? true : saved === "true";
+    } catch {
+      // Keep the expanded default when browser storage is unavailable.
+      return true;
+    }
+  });
+
+  const setAndPersistExpanded = (next: boolean) => {
+    setExpanded(next);
+    try {
+      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+    } catch {
+      // Sidebar state still works for this session when storage is unavailable.
+    }
+  };
 
   return (
     <nav
@@ -40,7 +60,7 @@ export function NavBar({ active }: { active: string }) {
               />
             </Link>
             <button
-              onClick={() => setExpanded(false)}
+              onClick={() => setAndPersistExpanded(false)}
               className="absolute right-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               title="Collapse"
             >
@@ -49,7 +69,7 @@ export function NavBar({ active }: { active: string }) {
           </div>
         ) : (
           <button
-            onClick={() => setExpanded(true)}
+            onClick={() => setAndPersistExpanded(true)}
             className="flex w-full items-center justify-center rounded-md px-2 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title="Expand"
           >
