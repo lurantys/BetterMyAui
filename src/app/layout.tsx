@@ -5,7 +5,7 @@ import { InlineScript } from "@/components/inline-script";
 import { LoadingBar } from "@/components/loading-bar";
 
 export const metadata: Metadata = {
-  title: "BetterJenzabar",
+  title: "Jenzabar+",
   description:
     "Track your AUI courses, prerequisites, GPA, and semester plans",
   icons: {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "BetterJenzabar | Schedule",
+  title: "Jenzabar+ | Schedule",
 };
 
 export default function CalendarLayout({ children }: { children: React.ReactNode }) {

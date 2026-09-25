@@ -64,11 +64,12 @@ export interface StudentProfile {
 
 // --- Storage keys ---
 
-const SCHEDULES_KEY = "bettermyaui_semester_schedules";
-const SEMESTERS_KEY = "bettermyaui_gpa_semesters";
-const PAST_SCHEDULES_KEY = "bettermyaui_past_semesters";
-const PROFILE_KEY = "bettermyaui_student_profile";
-const CHANNEL_NAME = "bettermyaui_sync";
+const STORAGE_PREFIX = "jenzabar_plus_";
+const SCHEDULES_KEY = `${STORAGE_PREFIX}semester_schedules`;
+const SEMESTERS_KEY = `${STORAGE_PREFIX}gpa_semesters`;
+const PAST_SCHEDULES_KEY = `${STORAGE_PREFIX}past_semesters`;
+const PROFILE_KEY = `${STORAGE_PREFIX}student_profile`;
+const CHANNEL_NAME = `${STORAGE_PREFIX}sync`;
 
 let channel: BroadcastChannel | null = null;
 let listeners: Array<() => void> = [];
@@ -117,12 +118,30 @@ function broadcast() {
   }
 }
 
+function readStorageValue(key: string): string | null {
+  const current = localStorage.getItem(key);
+  if (current !== null) return current;
+
+  const suffix = key.slice(STORAGE_PREFIX.length);
+  for (const candidate of Object.keys(localStorage)) {
+    if (candidate === key || !candidate.endsWith(`_${suffix}`)) continue;
+    const value = localStorage.getItem(candidate);
+    if (value !== null) {
+      localStorage.setItem(key, value);
+      localStorage.removeItem(candidate);
+      return value;
+    }
+  }
+
+  return null;
+}
+
 // --- Semester schedules (calendar) ---
 
 export function loadSchedules(): SemesterSchedule[] {
   if (typeof window === "undefined") return [];
   try {
-    const stored = localStorage.getItem(SCHEDULES_KEY);
+    const stored = readStorageValue(SCHEDULES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -139,7 +158,7 @@ export function saveSchedules(schedules: SemesterSchedule[]) {
 export function loadPastSchedules(): SemesterSchedule[] {
   if (typeof window === "undefined") return [];
   try {
-    const stored = localStorage.getItem(PAST_SCHEDULES_KEY);
+    const stored = readStorageValue(PAST_SCHEDULES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -156,7 +175,7 @@ export function savePastSchedules(schedules: SemesterSchedule[]) {
 export function loadSemesters(): Semester[] {
   if (typeof window === "undefined") return [];
   try {
-    const stored = localStorage.getItem(SEMESTERS_KEY);
+    const stored = readStorageValue(SEMESTERS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -171,7 +190,7 @@ export function saveSemesters(semesters: Semester[]) {
 export function loadProfile(): StudentProfile | null {
   if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem(PROFILE_KEY);
+    const stored = readStorageValue(PROFILE_KEY);
     if (!stored) return null;
     const profile = JSON.parse(stored) as Partial<StudentProfile>;
     return {

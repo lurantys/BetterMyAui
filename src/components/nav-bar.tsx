@@ -34,7 +34,7 @@ export function NavBar({ active }: { active: string }) {
             <Link href="/" className="shrink-0">
               <img
                 src={resolvedTheme === "dark" ? "/logowhiteaui.png" : "/logoaui.png"}
-                alt="BetterJenzabar"
+                alt="Jenzabar+"
                 className="h-12 w-auto"
               />
             </Link>
