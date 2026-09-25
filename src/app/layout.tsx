@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
-import { AuthProvider } from "@/lib/auth/provider";
-import { createClient } from "@/lib/supabase/server";
+import { InlineScript } from "@/components/inline-script";
 import { LoadingBar } from "@/components/loading-bar";
 
 export const metadata: Metadata = {
@@ -25,29 +24,20 @@ const themeScript = `
 })()
 `;
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let user = null;
-  try {
-    const supabase = await createClient();
-    const result = await supabase.auth.getUser();
-    user = result.data.user;
-  } catch {}
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <InlineScript html={themeScript} />
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-background text-foreground font-sans antialiased">
         <ThemeProvider>
-          <AuthProvider initialUser={user}>
-            <LoadingBar />
-            {children}
-          </AuthProvider>
+          <LoadingBar />
+          {children}
         </ThemeProvider>
       </body>
     </html>

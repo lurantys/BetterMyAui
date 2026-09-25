@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   CalendarDays,
@@ -7,12 +8,9 @@ import {
   LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
-  LogOut,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/lib/theme-provider";
-import { useUser } from "@/lib/auth/provider";
-import { signOut } from "@/lib/auth/actions";
 
 const navItems = [
   { href: "/calendar", icon: CalendarDays, label: "Schedule" },
@@ -22,8 +20,6 @@ const navItems = [
 
 export function NavBar({ active }: { active: string }) {
   const [expanded, setExpanded] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-  const user = useUser();
   const { resolvedTheme } = useTheme();
 
   return (
@@ -32,20 +28,19 @@ export function NavBar({ active }: { active: string }) {
         expanded ? "w-44" : "w-14"
       }`}
     >
-      {/* Logo / toggle */}
       <div className="mb-2 px-2">
         {expanded ? (
           <div className="relative flex items-center justify-center">
-            <a href="/" className="shrink-0">
+            <Link href="/" className="shrink-0">
               <img
                 src={resolvedTheme === "dark" ? "/logowhiteaui.png" : "/logoaui.png"}
                 alt="BetterJenzabar"
                 className="h-12 w-auto"
               />
-            </a>
+            </Link>
             <button
               onClick={() => setExpanded(false)}
-              className="absolute right-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="absolute right-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               title="Collapse"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -54,7 +49,7 @@ export function NavBar({ active }: { active: string }) {
         ) : (
           <button
             onClick={() => setExpanded(true)}
-            className="flex w-full items-center justify-center rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex w-full items-center justify-center rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title="Expand"
           >
             <PanelLeftOpen className="h-4 w-4" />
@@ -62,15 +57,14 @@ export function NavBar({ active }: { active: string }) {
         )}
       </div>
 
-      <div className={`mb-2 mx-2 h-px bg-border ${expanded ? "" : "w-8 mx-auto"}`} />
+      <div className={`mb-2 mx-2 h-px bg-border ${expanded ? "" : "mx-auto w-8"}`} />
 
-      {/* Nav items */}
       <div className="flex flex-col gap-0.5 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.href;
           return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               className={`flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
@@ -82,33 +76,13 @@ export function NavBar({ active }: { active: string }) {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {expanded && <span>{item.label}</span>}
-            </a>
+            </Link>
           );
         })}
       </div>
 
-      {/* User + Theme */}
       <div className="mt-auto flex flex-col items-center gap-2 px-2">
         <ThemeToggle />
-        {user && (
-          <button
-            disabled={signingOut}
-            onClick={async () => {
-              setSigningOut(true);
-              await signOut();
-              window.location.href = "/";
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50 disabled:pointer-events-none"
-            title={expanded ? "Sign out" : user.email}
-          >
-            {signingOut ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-            ) : (
-              <LogOut className="h-4 w-4 shrink-0" />
-            )}
-            {expanded && <span>{signingOut ? "Signing out..." : "Sign out"}</span>}
-          </button>
-        )}
       </div>
     </nav>
   );

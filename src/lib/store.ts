@@ -1,7 +1,6 @@
 "use client";
 
 // Shared data store with cross-tab sync via BroadcastChannel + localStorage.
-// Supabase is the source of truth; localStorage is a fast cache.
 
 // --- Calendar / scheduling types ---
 
@@ -57,11 +56,18 @@ export interface Semester {
   courses: CourseEntry[];
 }
 
+export interface StudentProfile {
+  fullName: string;
+  major: string | null;
+  minor: string | null;
+}
+
 // --- Storage keys ---
 
 const SCHEDULES_KEY = "bettermyaui_semester_schedules";
 const SEMESTERS_KEY = "bettermyaui_gpa_semesters";
 const PAST_SCHEDULES_KEY = "bettermyaui_past_semesters";
+const PROFILE_KEY = "bettermyaui_student_profile";
 const CHANNEL_NAME = "bettermyaui_sync";
 
 let channel: BroadcastChannel | null = null;
@@ -88,7 +94,8 @@ export function onStorageChange(callback: () => void): () => void {
       if (
         e.key === SCHEDULES_KEY ||
         e.key === SEMESTERS_KEY ||
-        e.key === PAST_SCHEDULES_KEY
+        e.key === PAST_SCHEDULES_KEY ||
+        e.key === PROFILE_KEY
       )
         callback();
     };
@@ -158,6 +165,27 @@ export function loadSemesters(): Semester[] {
 
 export function saveSemesters(semesters: Semester[]) {
   localStorage.setItem(SEMESTERS_KEY, JSON.stringify(semesters));
+  broadcast();
+}
+
+export function loadProfile(): StudentProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(PROFILE_KEY);
+    if (!stored) return null;
+    const profile = JSON.parse(stored) as Partial<StudentProfile>;
+    return {
+      fullName: typeof profile.fullName === "string" ? profile.fullName : "Student",
+      major: typeof profile.major === "string" ? profile.major : null,
+      minor: typeof profile.minor === "string" ? profile.minor : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveProfile(profile: StudentProfile) {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   broadcast();
 }
 
@@ -334,31 +362,4 @@ export function getUnmetPrereqs(
   }
 
   return prereqs.filter((prereq) => !takenBefore.has(prereq.toUpperCase()));
-}
-
-// --- Supabase sync ---
-
-export async function syncFromSupabase(): Promise<void> {
-  const { loadPlannedSemesters, loadPastSemesters } = await import("@/lib/auth/data-actions");
-  try {
-    const [planned, past] = await Promise.all([loadPlannedSemesters(), loadPastSemesters()]);
-    saveSchedules(planned);
-    savePastSchedules(past);
-  } catch {
-    // Not logged in or network error — silently fall back to localStorage
-  }
-}
-
-export async function syncSchedulesToSupabase(schedules: SemesterSchedule[]): Promise<void> {
-  try {
-    const { savePlannedSemesters } = await import("@/lib/auth/data-actions");
-    await savePlannedSemesters(schedules);
-  } catch {}
-}
-
-export async function syncPastSchedulesToSupabase(schedules: SemesterSchedule[]): Promise<void> {
-  try {
-    const { savePastSemesters } = await import("@/lib/auth/data-actions");
-    await savePastSemesters(schedules);
-  } catch {}
 }

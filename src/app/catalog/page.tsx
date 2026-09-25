@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, ArrowLeft } from "lucide-react";
+import {
+  startTransition,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
+import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { NavBar } from "@/components/nav-bar";
 
 interface Course {
@@ -70,8 +76,10 @@ export default function CatalogPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setLoading(true);
-    setCourses([]);
+    startTransition(() => {
+      setLoading(true);
+      setCourses([]);
+    });
 
     const params = new URLSearchParams();
     if (debouncedQuery) params.set("q", debouncedQuery);

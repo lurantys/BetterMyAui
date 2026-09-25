@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  ArrowLeft,
+  startTransition,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
+import {
   Plus,
   Trash2,
   ChevronLeft,
@@ -11,14 +16,12 @@ import {
   X,
   CalendarDays,
   BookOpen,
-  LayoutGrid,
-  Info,
   Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
-import { ThemeToggle } from "@/components/theme-toggle";
+import type { CalendarOptions, EventContentArg } from "@fullcalendar/core";
 import { NavBar } from "@/components/nav-bar";
 
 const FullCalendarWrapper = dynamic(
@@ -168,33 +171,16 @@ export default function CalendarPage() {
   const [searchResults, setSearchResults] = useState<CatalogCourse[]>([]);
   const [searching, setSearching] = useState(false);
   const searchAbortRef = useRef<AbortController | null>(null);
-  const [syncing, setSyncing] = useState(false);
 
-  // Load from localStorage, then sync from Supabase
   useEffect(() => {
     const stored = loadSchedules();
-    if (stored.length > 0) {
-      setSchedules(stored);
-      setActiveId(stored[0].id);
-    }
-    setPastSchedules(loadPastSchedules());
-    setLoaded(true);
-
-    // Background sync from Supabase
-    setSyncing(true);
-    import("@/lib/store").then(({ syncFromSupabase }) => {
-      syncFromSupabase().then(() => {
-        const updated = loadSchedules();
-        if (updated.length > 0) {
-          setSchedules(updated);
-          setActiveId((prev) => {
-            if (prev && updated.some((s) => s.id === prev)) return prev;
-            return updated[0].id;
-          });
-        }
-        setPastSchedules(loadPastSchedules());
-        setSyncing(false);
-      }).catch(() => setSyncing(false));
+    startTransition(() => {
+      if (stored.length > 0) {
+        setSchedules(stored);
+        setActiveId(stored[0].id);
+      }
+      setPastSchedules(loadPastSchedules());
+      setLoaded(true);
     });
   }, []);
 
@@ -207,9 +193,6 @@ export default function CalendarPage() {
   useEffect(() => {
     if (loaded) {
       saveSchedules(schedules);
-      import("@/lib/store").then(({ syncSchedulesToSupabase }) => {
-        syncSchedulesToSupabase(schedules);
-      });
     }
   }, [schedules, loaded]);
 
@@ -413,7 +396,6 @@ export default function CalendarPage() {
 
   // Catalog search
   useEffect(() => {
-    setSearchResults([]);
     if (!searchQuery.trim()) {
       return;
     }
@@ -481,7 +463,7 @@ export default function CalendarPage() {
   const [newTerm, setNewTerm] = useState<"fall" | "spring" | "summer">("fall");
   const [newYear, setNewYear] = useState(CURRENT_YEAR);
 
-  const calendarOptions = {
+  const calendarOptions: CalendarOptions = {
     initialDate,
     initialView: "timeGridWeek",
     headerToolbar: false,
@@ -505,8 +487,11 @@ export default function CalendarPage() {
     hiddenDays: [0, 6],
     events: eventsToCalendar(calendarEvents, prereqStatus),
     eventClick: handleEventClick,
-    eventContent: (arg: any) => {
-      const { location, hasUnmetPrereqs } = arg.event.extendedProps;
+    eventContent: (arg: EventContentArg) => {
+      const { location, hasUnmetPrereqs } = arg.event.extendedProps as {
+        location: string;
+        hasUnmetPrereqs: boolean;
+      };
       return (
         <div className="fc-event-title-container p-1 leading-tight">
           <div className="fc-event-title text-xs font-semibold leading-tight flex items-center gap-1">
@@ -541,15 +526,6 @@ export default function CalendarPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Syncing indicator */}
-      {syncing && (
-        <div className="flex items-center gap-2 border-b border-border bg-card/80 px-4 py-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary" />
-          Syncing your data...
-        </div>
-      )}
-
-      {/* Slim vertical nav bar */}
       <div className="flex flex-1 overflow-hidden">
         <NavBar active="/calendar" />
 
@@ -562,12 +538,18 @@ export default function CalendarPage() {
               <Input
                 placeholder="Search courses to add..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchResults([]);
+                }}
                 className="pl-9 h-9 text-sm"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                  }}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />

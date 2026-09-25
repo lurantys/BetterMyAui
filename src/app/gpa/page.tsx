@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  ArrowLeft,
+  startTransition,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
+import {
   Plus,
   Trash2,
   GraduationCap,
@@ -10,24 +16,24 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  TrendingUp,
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { NavBar } from "@/components/nav-bar";
-import { getProfile, updateProfile } from "@/lib/auth/actions";
 import type { ParsedSemester } from "@/lib/transcript-parser";
 import {
   type CalendarEvent,
   type SemesterSchedule,
   type CatalogCourse,
+  type StudentProfile,
   loadSchedules,
   saveSchedules,
   loadPastSchedules,
   savePastSchedules,
+  loadProfile,
+  saveProfile,
   onStorageChange,
   generateId,
   getCourseColor,
@@ -88,7 +94,6 @@ export default function CareerPage() {
   >([]);
   const [pastSchedules, setPastSchedules] = useState<SemesterSchedule[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "calendar" | "past">(
     "all"
@@ -109,24 +114,33 @@ export default function CareerPage() {
   const [selectedForImport, setSelectedForImport] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Profile
-  const [profile, setProfile] = useState<{ fullName: string; major: string | null; minor: string | null } | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [editMajor, setEditMajor] = useState(false);
   const [editMinor, setEditMinor] = useState(false);
   const [majorValue, setMajorValue] = useState("");
   const [minorValue, setMinorValue] = useState("");
 
-  const saveMajor = useCallback(async () => {
-    await updateProfile({ major: majorValue.trim() || undefined });
-    setProfile((p) => p ? { ...p, major: majorValue.trim() || null } : p);
+  const saveMajor = useCallback(() => {
+    const nextProfile = {
+      fullName: profile?.fullName ?? "Student",
+      major: majorValue.trim() || null,
+      minor: profile?.minor ?? null,
+    };
+    setProfile(nextProfile);
+    saveProfile(nextProfile);
     setEditMajor(false);
-  }, [majorValue]);
+  }, [majorValue, profile]);
 
-  const saveMinor = useCallback(async () => {
-    await updateProfile({ minor: minorValue.trim() || undefined });
-    setProfile((p) => p ? { ...p, minor: minorValue.trim() || null } : p);
+  const saveMinor = useCallback(() => {
+    const nextProfile = {
+      fullName: profile?.fullName ?? "Student",
+      major: profile?.major ?? null,
+      minor: minorValue.trim() || null,
+    };
+    setProfile(nextProfile);
+    saveProfile(nextProfile);
     setEditMinor(false);
-  }, [minorValue]);
+  }, [minorValue, profile]);
 
   // Add course to past semester
   const [showAddCourse, setShowAddCourse] = useState<string | null>(null);
@@ -143,53 +157,46 @@ export default function CareerPage() {
   const [searching, setSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load from localStorage, then sync from Supabase
   useEffect(() => {
-    setCalendarSchedules(loadSchedules());
-    setPastSchedules(loadPastSchedules());
-    setLoaded(true);
-
-    getProfile().then((p) => {
-      if (p) {
-        setProfile({ fullName: p.fullName, major: p.major, minor: p.minor });
-        setMajorValue(p.major ?? "");
-        setMinorValue(p.minor ?? "");
-      }
+    const storedProfile = loadProfile();
+    const nextProfile = storedProfile ?? {
+      fullName: "Student",
+      major: null,
+      minor: null,
+    };
+    startTransition(() => {
+      setCalendarSchedules(loadSchedules());
+      setPastSchedules(loadPastSchedules());
+      setProfile(nextProfile);
+      setMajorValue(nextProfile.major ?? "");
+      setMinorValue(nextProfile.minor ?? "");
+      setLoaded(true);
     });
-
-    setSyncing(true);
-    import("@/lib/store").then(({ syncFromSupabase }) => {
-      syncFromSupabase().then(() => {
-        setCalendarSchedules(loadSchedules());
-        setPastSchedules(loadPastSchedules());
-        setSyncing(false);
-      }).catch(() => setSyncing(false));
-    });
+    if (!storedProfile) saveProfile(nextProfile);
   }, []);
 
   useEffect(() => {
     return onStorageChange(() => {
       setCalendarSchedules(loadSchedules());
       setPastSchedules(loadPastSchedules());
+      const updatedProfile = loadProfile();
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+        setMajorValue(updatedProfile.major ?? "");
+        setMinorValue(updatedProfile.minor ?? "");
+      }
     });
   }, []);
 
-  // Sync to Supabase on changes
   useEffect(() => {
     if (loaded) {
       saveSchedules(calendarSchedules);
-      import("@/lib/store").then(({ syncSchedulesToSupabase }) => {
-        syncSchedulesToSupabase(calendarSchedules);
-      });
     }
   }, [calendarSchedules, loaded]);
 
   useEffect(() => {
     if (loaded) {
       savePastSchedules(pastSchedules);
-      import("@/lib/store").then(({ syncPastSchedulesToSupabase }) => {
-        syncPastSchedulesToSupabase(pastSchedules);
-      });
     }
   }, [pastSchedules, loaded]);
 
@@ -215,16 +222,18 @@ export default function CareerPage() {
   }, [allSchedules, activeTab]);
 
   useEffect(() => {
-    if (filteredSchedules.length > 0 && !activeId) {
-      setActiveId(filteredSchedules[0].id);
-    } else if (
-      filteredSchedules.length > 0 &&
-      !filteredSchedules.find((s) => s.id === activeId)
-    ) {
-      setActiveId(filteredSchedules[0].id);
-    } else if (filteredSchedules.length === 0) {
-      setActiveId(null);
-    }
+    startTransition(() => {
+      if (filteredSchedules.length > 0 && !activeId) {
+        setActiveId(filteredSchedules[0].id);
+      } else if (
+        filteredSchedules.length > 0 &&
+        !filteredSchedules.find((s) => s.id === activeId)
+      ) {
+        setActiveId(filteredSchedules[0].id);
+      } else if (filteredSchedules.length === 0) {
+        setActiveId(null);
+      }
+    });
   }, [filteredSchedules, activeId]);
 
   const activeSchedule = useMemo(
@@ -245,11 +254,10 @@ export default function CareerPage() {
 
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchResults([]);
       return;
     }
     const controller = new AbortController();
-    setSearching(true);
+    startTransition(() => setSearching(true));
     fetch(`/api/courses?q=${encodeURIComponent(searchQuery)}`, {
       signal: controller.signal,
     })
@@ -324,7 +332,7 @@ export default function CareerPage() {
     if (toImport.length === 0) return;
 
     // Fetch catalog to enrich courses with correct titles, credits, prereqs
-    let catalogMap: Map<string, CatalogCourse> = new Map();
+    const catalogMap: Map<string, CatalogCourse> = new Map();
     try {
       const res = await fetch("/api/courses");
       const data = await res.json();
@@ -527,13 +535,6 @@ export default function CareerPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {syncing && (
-        <div className="flex items-center gap-2 border-b border-border bg-card/80 px-4 py-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary" />
-          Syncing your data...
-        </div>
-      )}
-
       <div className="flex flex-1 overflow-hidden">
         <NavBar active="/gpa" />
 
@@ -704,7 +705,10 @@ export default function CareerPage() {
                                   <Input
                                     placeholder="e.g. CSC 2302, Data Structures..."
                                     value={searchInput}
-                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onChange={(e) => {
+                                      setSearchInput(e.target.value);
+                                      setSearchResults([]);
+                                    }}
                                     autoFocus
                                   />
                                   {searchResults.length > 0 && (

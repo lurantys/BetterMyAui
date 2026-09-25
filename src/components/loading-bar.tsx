@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { startTransition, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export function LoadingBar() {
@@ -8,7 +8,7 @@ export function LoadingBar() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
+    startTransition(() => setLoading(true));
     const timer = setTimeout(() => setLoading(false), 400);
     return () => clearTimeout(timer);
   }, [pathname]);
