@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  startTransition,
   useState,
   useEffect,
   useCallback,
@@ -52,7 +51,7 @@ function hasAdditionalPrerequisiteDetails(
 }
 
 export default function CatalogPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [disciplines, setDisciplines] = useState<Record<string, string>>({});
   const [courseNames, setCourseNames] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
@@ -61,8 +60,7 @@ export default function CatalogPage() {
   const [selectedLevel, setSelectedLevel] = useState("");
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const abortRef = useRef<AbortController | null>(null);
+  const [visiblePage, setVisiblePage] = useState({ key: "", count: PAGE_SIZE });
   const loadingMoreRef = useRef(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -74,61 +72,52 @@ export default function CatalogPage() {
   }, [query]);
 
   useEffect(() => {
-    fetch("/api/courses")
+    const controller = new AbortController();
+    fetch("/api/courses", { signal: controller.signal })
       .then((response) => response.json())
       .then((data: ApiResponse) => {
+        if (controller.signal.aborted) return;
+        setAllCourses(data.courses);
         setDisciplines(data.disciplines);
         setCourseNames(
           Object.fromEntries(
             data.courses.map((course) => [course.code.toUpperCase(), course.title])
           )
         );
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    startTransition(() => {
-      setLoading(true);
-      setCourses([]);
-      setVisibleCount(PAGE_SIZE);
-      loadingMoreRef.current = false;
-    });
-
-    const params = new URLSearchParams();
-    if (debouncedQuery) params.set("q", debouncedQuery);
-    if (selectedDiscipline) params.set("discipline", selectedDiscipline);
-    if (selectedLevel) params.set("level", selectedLevel);
-
-    fetch(`/api/courses?${params}`, { signal: controller.signal })
-      .then((response) => response.json())
-      .then((data: ApiResponse) => {
-        if (controller.signal.aborted) return;
-        setCourses(data.courses);
         setLoading(false);
       })
       .catch((error) => {
         if (error.name !== "AbortError") setLoading(false);
       });
-
     return () => controller.abort();
-  }, [debouncedQuery, selectedDiscipline, selectedLevel]);
+  }, []);
+
+  const courses = useMemo(() => {
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
+    return allCourses.filter((course) => {
+      if (selectedDiscipline && !course.code.startsWith(selectedDiscipline)) return false;
+      if (selectedLevel && course.level !== selectedLevel) return false;
+      return !normalizedQuery ||
+        course.code.toLowerCase().includes(normalizedQuery) ||
+        course.title.toLowerCase().includes(normalizedQuery);
+    });
+  }, [allCourses, debouncedQuery, selectedDiscipline, selectedLevel]);
+
+  const filterKey = `${debouncedQuery}\u0000${selectedDiscipline}\u0000${selectedLevel}`;
+  const visibleCount = visiblePage.key === filterKey ? visiblePage.count : PAGE_SIZE;
 
   const loadMore = useCallback(() => {
     if (loadingMoreRef.current || visibleCount >= courses.length) return;
 
     loadingMoreRef.current = true;
-    setVisibleCount(
-      Math.min(visibleCount + PAGE_SIZE, courses.length)
-    );
+    setVisiblePage({
+      key: filterKey,
+      count: Math.min(visibleCount + PAGE_SIZE, courses.length),
+    });
     requestAnimationFrame(() => {
       loadingMoreRef.current = false;
     });
-  }, [courses.length, visibleCount]);
+  }, [courses.length, filterKey, visibleCount]);
 
   useEffect(() => {
     if (loading || visibleCount >= courses.length) return;

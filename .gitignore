@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+/Modified_Transcript.pdf
 
 # debug
 npm-debug.log*

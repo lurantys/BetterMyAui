@@ -417,7 +417,7 @@ export default function CalendarPage() {
       const controller = new AbortController();
       searchAbortRef.current = controller;
       setSearching(true);
-      fetch(`/api/courses?q=${encodeURIComponent(searchQuery)}`, {
+      fetch(`/api/courses?q=${encodeURIComponent(searchQuery)}&limit=20`, {
         signal: controller.signal,
       })
         .then((r) => r.json())

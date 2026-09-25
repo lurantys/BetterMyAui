@@ -258,7 +258,7 @@ export default function CareerPage() {
     }
     const controller = new AbortController();
     startTransition(() => setSearching(true));
-    fetch(`/api/courses?q=${encodeURIComponent(searchQuery)}`, {
+    fetch(`/api/courses?q=${encodeURIComponent(searchQuery)}&limit=6`, {
       signal: controller.signal,
     })
       .then((r) => r.json())
@@ -518,7 +518,7 @@ export default function CareerPage() {
         gpa: calculateSemesterGpa(sem.courses),
         credits: sem.courses.filter(
           (c) =>
-            c.gradePoints !== null && !["W", "I", "P"].includes(c.grade ?? "")
+            c.grade !== null && !["W", "I"].includes(c.grade)
         ).reduce((sum, c) => sum + c.credits, 0),
         courseCount: sem.courses.length,
       })),

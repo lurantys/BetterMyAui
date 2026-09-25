@@ -39,6 +39,8 @@ export async function GET(request: Request) {
   const q = searchParams.get("q")?.toLowerCase() ?? "";
   const discipline = searchParams.get("discipline") ?? "";
   const level = searchParams.get("level") ?? "";
+  const limitParam = searchParams.get("limit");
+  const requestedLimit = limitParam ? Number.parseInt(limitParam, 10) : NaN;
 
   const catalog = getCatalog();
 
@@ -62,9 +64,20 @@ export async function GET(request: Request) {
     courses = courses.filter((c) => c.level === level);
   }
 
+  const total = courses.length;
+  if (Number.isFinite(requestedLimit) && requestedLimit > 0) {
+    courses = courses.slice(0, Math.min(requestedLimit, 100));
+  }
+
   return NextResponse.json({
     disciplines: catalog.disciplines,
     courses,
-    total: courses.length,
+    total,
+  }, {
+    headers: {
+      // Catalog data is bundled with the deployment and changes only when the
+      // app is redeployed, so browsers and the edge can safely reuse it.
+      "Cache-Control": "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+    },
   });
 }

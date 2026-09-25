@@ -260,6 +260,10 @@ function isGraded(c: GradedItem): boolean {
   return c.gradePoints !== null && c.grade !== null && !["W", "I", "P"].includes(c.grade);
 }
 
+function earnsCredits(c: GradedItem): boolean {
+  return c.grade !== null && !["W", "I"].includes(c.grade);
+}
+
 export function calculateSemesterGpa(
   courses: GradedItem[]
 ): number | null {
@@ -295,7 +299,7 @@ export function calculateTotalCredits(
   let total = 0;
   for (const sem of semesters) {
     for (const course of sem.courses) {
-      if (isGraded(course)) {
+      if (earnsCredits(course)) {
         total += course.credits;
       }
     }
