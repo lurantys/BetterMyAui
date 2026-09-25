@@ -351,7 +351,7 @@ export default function CareerPage() {
           id: generateId(),
           code: c.code,
           title: catalog?.title || c.title,
-          credits: catalog?.credits || c.credits,
+          credits: c.credits > 0 ? c.credits : (catalog?.credits ?? 3),
           daysOfWeek: [],
           startTime: "",
           endTime: "",

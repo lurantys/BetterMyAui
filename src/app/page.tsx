@@ -15,8 +15,6 @@ import {
   CircleAlert,
   Clock3,
   GraduationCap,
-  LayoutGrid,
-  Sparkles,
   Upload,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -158,7 +156,6 @@ export default function Home() {
         : EMPTY_SNAPSHOT,
     [workspaceKey]
   );
-  const greeting = "Good afternoon";
 
   const hasData =
     workspace.profile !== null ||
@@ -213,7 +210,6 @@ export default function Home() {
         ) : hasData ? (
           <CommandCenter
             firstName={firstName}
-            greeting={greeting}
             activeSchedule={activeSchedule}
             activeCredits={activeCredits}
             cumulativeGpa={cumulativeGpa}
@@ -275,11 +271,8 @@ function Welcome() {
     <div className="mx-auto max-w-6xl">
       <section className="grid w-full gap-12 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-20 lg:py-12">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">
-            Academic planning for AUI
-          </p>
           <h1 className="mt-5 max-w-2xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
-            Welcome to Jenzabar+.
+            Plan your semester.
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
             Plan your courses, check prerequisites, and track your progress.
@@ -288,7 +281,7 @@ function Welcome() {
 
         <div className="py-2">
           <p className="px-1 py-4 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Start with one action
+              Get started
           </p>
           <div className="divide-y divide-border/60">
             <StartAction
@@ -348,7 +341,6 @@ function StartAction({
 
 function CommandCenter({
   firstName,
-  greeting,
   activeSchedule,
   activeCredits,
   cumulativeGpa,
@@ -357,7 +349,6 @@ function CommandCenter({
   alerts,
 }: {
   firstName: string;
-  greeting: string;
   activeSchedule: SemesterSchedule | null;
   activeCredits: number;
   cumulativeGpa: number;
@@ -369,15 +360,11 @@ function CommandCenter({
     <div className="mx-auto max-w-6xl">
       <section className="flex flex-col justify-between gap-8 border-b border-border/70 pb-10 sm:flex-row sm:items-end">
         <div>
-          <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
-            Academic command center
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
-            {greeting}, {firstName}.
+          <h1 className="text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
+            Welcome back, {firstName}.
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Here is the clearest view of what is next in your academic year.
+            Here’s what’s coming up in your semester.
           </p>
         </div>
         <Link
@@ -445,7 +432,7 @@ function CommandCenter({
                 Your next move
               </p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em]">
-                {nextClass ? "Keep the week moving" : "Shape your semester"}
+                {nextClass ? "Next class" : "Your schedule"}
               </h2>
             </div>
             <Link
@@ -529,49 +516,6 @@ function CommandCenter({
         </div>
       </section>
 
-      <section className="border-t border-border/70 py-10">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Explore Jenzabar+
-            </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em]">
-              Keep every academic decision in one place.
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/catalog"
-              className="rounded-md border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Browse catalog
-            </Link>
-            <Link
-              href="/gpa"
-              className="rounded-md border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Open My Career
-            </Link>
-          </div>
-        </div>
-        <div className="mt-8 grid gap-6 text-sm text-muted-foreground sm:grid-cols-3 sm:gap-0">
-          <FeatureItem
-            icon={<CalendarDays className="h-4 w-4" />}
-            title="Schedule"
-            description="Shape a week that works."
-          />
-          <FeatureItem
-            icon={<BookOpen className="h-4 w-4" />}
-            title="Catalog"
-            description="Check courses before you commit."
-          />
-          <FeatureItem
-            icon={<LayoutGrid className="h-4 w-4" />}
-            title="My Career"
-            description="See the progress behind the plan."
-          />
-        </div>
-      </section>
     </div>
   );
 }
@@ -609,23 +553,5 @@ function SummaryItem({
         {detail}
       </p>
     </Link>
-  );
-}
-
-function FeatureItem({
-  icon,
-  title,
-  description,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="sm:border-l sm:border-border/70 sm:pl-6 sm:first:border-l-0 sm:first:pl-0">
-      <div className="flex items-center gap-2 text-primary">{icon}</div>
-      <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
-      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>
-    </div>
   );
 }
