@@ -280,12 +280,7 @@ function Welcome() {
             Welcome to Jenzabar+.
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Build a semester you can actually follow. Keep your schedule,
-            prerequisites, and academic progress together in one calm workspace.
-          </p>
-          <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 text-primary" />
-            No account needed. Your data stays in this browser.
+            Plan your courses, check prerequisites, and track your progress.
           </p>
         </div>
 
@@ -310,26 +305,6 @@ function Welcome() {
             icon={<BookOpen className="h-4 w-4" />}
             title="Explore the catalog"
             description="Search every AUI course and check its prerequisites."
-          />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-4xl py-16 sm:py-20">
-        <div className="grid gap-10 sm:grid-cols-3 sm:gap-0">
-          <WelcomeStep
-            number="01"
-            title="Plan"
-            description="Add courses to a semester and see your weekly rhythm."
-          />
-          <WelcomeStep
-            number="02"
-            title="Check"
-            description="Catch prerequisite issues before they become blockers."
-          />
-          <WelcomeStep
-            number="03"
-            title="Track"
-            description="Record grades and keep your academic progress visible."
           />
         </div>
       </section>
@@ -364,26 +339,6 @@ function StartAction({
       </span>
       <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
     </Link>
-  );
-}
-
-function WelcomeStep({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="sm:border-l sm:border-border/70 sm:pl-6 sm:first:border-l-0 sm:first:pl-0">
-      <span className="font-mono text-xs text-primary">{number}</span>
-      <h2 className="mt-4 text-sm font-semibold">{title}</h2>
-      <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-        {description}
-      </p>
-    </div>
   );
 }
 
