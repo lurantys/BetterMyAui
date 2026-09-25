@@ -409,45 +409,6 @@
       "description": "The aim of this course, taught in Arabic, is to promote the knowledge of different literary genres and to enable students to differentiate between them and to appreciate beauty in a literary work of art. Literary concepts are introduced to students and followed by reading, analysis, and discussion of works drawn from various genres. The texts are either originally written in Arabic or translated into Arabic from other languages. In addition to its literary and aesthetic value, the collection of texts used belongs to a variety of literary genres and is written by authors of diverse nationalities. This course is designed exclusively for students with a Moroccan baccalaureate or an Arabic-based high school degree from any country. However, other students whose placement test scores indicate that they have the capability to attend this course may enroll in it. ard Arabic. At the end of this course, students will be able to read and understand short texts from newspapers, to write compositions in Arabic, and to comment on ideas in accurate Arabic. This course is designed exclusively for students who hold an International Baccalaureate or a foreign cultural mission baccalaureate in Morocco, and they are enrolled in it based on placement test results."
     },
     {
-      "code": "ARB 1202",
-      "title": "Arabic for Academic Purposes",
-      "credits": 2.0,
-      "level": "undergraduate",
-      "prerequisite_raw": null,
-      "prerequisite_courses": [],
-      "corequisite_raw": null,
-      "corequisite_courses": [],
-      "classification_requirement": null,
-      "other_requirement_notes": null,
-      "description": "This course aims to train students to use the grammar, structures, and expressions learned in high school effectively and correctly in listening, speaking, reading, and writing in academic contexts. Special emphasis is placed on the characteristics of Arabic sentence structure. This enables students to distinguish grammatical from ungrammatical usage in both writing and speaking. The main objective is to bring the student up to the level where they may be able to fully appreciate the subtleties of the Arabic language. This course is designed exclusively for students who hold an International Baccalaureate or a foreign cultural mission baccalaureate in Morocco, and they are enrolled in it based on placement test results."
-    },
-    {
-      "code": "ARB 1203",
-      "title": "Arabic for Communication Purposes",
-      "credits": 2.0,
-      "level": "undergraduate",
-      "prerequisite_raw": null,
-      "prerequisite_courses": [],
-      "corequisite_raw": null,
-      "corequisite_courses": [],
-      "classification_requirement": null,
-      "other_requirement_notes": null,
-      "description": "This advanced course focuses on all aspects of oral and written communication. It has three components: 1) review of the basic rules of mechanics and grammar; 2) use of selected texts to practice reading aloud, remedy speech errors, and to develop comprehension and appreciation; and 3) practice of writing in response to topic assignments. The course also provides students with the skills for interpersonal, group, and public communication and debate, and develops awareness of the importance of variations between colloquial and formal forms of language used in various Arabic-speaking countries. This course is designed exclusively for students who hold an International Baccalaureate or a foreign cultural mission baccalaureate in Morocco, and they are enrolled in it based on placement test results."
-    },
-    {
-      "code": "ARB 1241",
-      "title": "Arabic Literature",
-      "credits": 2.0,
-      "level": "undergraduate",
-      "prerequisite_raw": null,
-      "prerequisite_courses": [],
-      "corequisite_raw": null,
-      "corequisite_courses": [],
-      "classification_requirement": null,
-      "other_requirement_notes": null,
-      "description": "The aim of this course, taught in Arabic, is to promote the knowledge of different literary genres and to enable students to differentiate between them and to appreciate beauty in a literary work of art. Literary concepts are introduced to students and followed by reading, analysis, and discussion of works drawn from various genres. The texts are either originally written in Arabic or translated into Arabic from other languages. In addition to its literary and aesthetic value, the collection of texts used belongs to a variety of literary genres and is written by authors of diverse nationalities. This course is designed exclusively for students with a Moroccan baccalaureate or an Arabic-based high school degree from any country. However, other students whose placement test scores indicate that they have the capability to attend this course may enroll in it. Academic Reading (ARD)"
-    },
-    {
       "code": "ARD 1001",
       "title": "Academic Reading I",
       "credits": 0.0,
