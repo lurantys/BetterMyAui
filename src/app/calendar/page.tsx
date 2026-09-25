@@ -108,26 +108,39 @@ function formatTime12(t: string): string {
   return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const value = hex.replace("#", "");
+  if (value.length !== 6) return `rgba(107, 114, 128, ${alpha})`;
+  const red = Number.parseInt(value.slice(0, 2), 16);
+  const green = Number.parseInt(value.slice(2, 4), 16);
+  const blue = Number.parseInt(value.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
 function eventsToCalendar(
   events: CalendarEvent[],
   prereqStatus?: Map<string, string[]>
 ) {
-  return events.map((e) => ({
-    id: e.id,
-    title: `${e.code} — ${e.title}`,
-    daysOfWeek: e.daysOfWeek,
-    startTime: e.startTime,
-    endTime: e.endTime,
-    color: e.color,
-    extendedProps: {
-      code: e.code,
-      courseTitle: e.title,
-      credits: e.credits,
-      location: e.location,
-      hasUnmetPrereqs: prereqStatus?.has(e.id) ?? false,
-      unmetPrereqs: prereqStatus?.get(e.id) ?? [],
-    },
-  }));
+  return events.map((e) => {
+    const color = getCourseColor(e.code);
+    return {
+      id: e.id,
+      title: `${e.code} — ${e.title}`,
+      daysOfWeek: e.daysOfWeek,
+      startTime: e.startTime,
+      endTime: e.endTime,
+      backgroundColor: hexToRgba(color, 0.16),
+      borderColor: color,
+      extendedProps: {
+        code: e.code,
+        courseTitle: e.title,
+        credits: e.credits,
+        location: e.location,
+        hasUnmetPrereqs: prereqStatus?.has(e.id) ?? false,
+        unmetPrereqs: prereqStatus?.get(e.id) ?? [],
+      },
+    };
+  });
 }
 
 interface EventForm {
@@ -466,7 +479,14 @@ export default function CalendarPage() {
   const calendarOptions: CalendarOptions = {
     initialDate,
     initialView: "timeGridWeek",
-    headerToolbar: false,
+    headerToolbar: {
+      left: "title",
+      center: "prev,next today",
+      right: "",
+    },
+    buttonText: {
+      today: "Today",
+    },
     views: {
       timeGridWeek: {
         type: "timeGrid",
@@ -477,10 +497,16 @@ export default function CalendarPage() {
     },
     slotMinTime: "08:00:00",
     slotMaxTime: "20:00:00",
+    slotDuration: "00:30:00",
+    snapDuration: "00:10:00",
+    slotLabelInterval: "01:00:00",
     slotLabelFormat: {
       hour: "numeric",
-      minute: "2-digit",
       meridiem: "short",
+    },
+    dayHeaderFormat: {
+      weekday: "short",
+      day: "numeric",
     },
     allDaySlot: false,
     weekends: false,
@@ -488,32 +514,40 @@ export default function CalendarPage() {
     events: eventsToCalendar(calendarEvents, prereqStatus),
     eventClick: handleEventClick,
     eventContent: (arg: EventContentArg) => {
-      const { location, hasUnmetPrereqs } = arg.event.extendedProps as {
-        location: string;
-        hasUnmetPrereqs: boolean;
-      };
+      const { code, courseTitle, hasUnmetPrereqs } =
+        arg.event.extendedProps as {
+          code: string;
+          courseTitle: string;
+          hasUnmetPrereqs: boolean;
+        };
       return (
-        <div className="fc-event-title-container p-1 leading-tight">
-          <div className="fc-event-title text-xs font-semibold leading-tight flex items-center gap-1">
-            {arg.timeText}
+        <div className="calendar-event-content">
+          <div className="calendar-event-heading">
+            <span className="calendar-event-code">{code}</span>
             {hasUnmetPrereqs && (
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-status-missing shrink-0" title="Missing prerequisites" />
+              <span
+                className="calendar-event-alert"
+                title="Missing prerequisites"
+              />
             )}
           </div>
-          <div className="text-[10px] opacity-90 leading-tight truncate">
-            {arg.event.title}
-          </div>
-          {location && (
-            <div className="text-[9px] opacity-70 leading-tight mt-0.5">
-              {location}
-            </div>
+          <div className="calendar-event-name">{courseTitle}</div>
+          {arg.timeText && (
+            <div className="calendar-event-time">{arg.timeText}</div>
           )}
         </div>
       );
     },
-    height: "auto",
+    eventMinHeight: 26,
+    eventShortHeight: 34,
+    slotEventOverlap: false,
+    scrollTime: "08:00:00",
+    scrollTimeReset: false,
+    stickyHeaderDates: true,
+    height: "100%",
     expandRows: true,
     nowIndicator: true,
+    nowIndicatorSnap: "auto",
   };
 
   if (!loaded) {
@@ -525,24 +559,26 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="schedule-shell flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <NavBar active="/calendar" />
 
-        {/* Left panel — Course search & list */}
-        <aside className="flex w-[340px] min-w-[300px] flex-col border-r border-border bg-card">
-          {/* Search bar */}
-          <div className="border-b border-border p-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <aside className="flex w-[320px] min-w-[280px] flex-col bg-muted/20">
+          <div className="px-5 pb-4 pt-5">
+            <p className="text-sm font-semibold text-foreground">Add courses</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Search the AUI course catalog
+            </p>
+            <div className="relative mt-4">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search courses to add..."
+                placeholder="Search by code or title"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setSearchResults([]);
                 }}
-                className="pl-9 h-9 text-sm"
+                className="h-9 rounded-md border-0 bg-card pl-9 pr-9 text-sm shadow-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
               />
               {searchQuery && (
                 <button
@@ -550,7 +586,7 @@ export default function CalendarPage() {
                     setSearchQuery("");
                     setSearchResults([]);
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -559,7 +595,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Course list */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
             {searchQuery.trim() ? (
               <>
                 {searching && (
@@ -577,15 +613,15 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={course.code}
-                      className="border-b border-border px-3 py-3 hover:bg-accent/50 transition-colors"
+                      className="rounded-md px-3 py-3 transition-colors hover:bg-card/80"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm font-bold text-primary">
+                            <span className="font-mono text-[13px] font-semibold text-foreground">
                               {course.code}
                             </span>
-                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground">
                               {course.credits} cr
                             </span>
                           </div>
@@ -601,7 +637,7 @@ export default function CalendarPage() {
                         {added ? (
                           <button
                             onClick={() => removeCourseByCode(course.code)}
-                            className="shrink-0 rounded-full bg-status-met/15 px-2.5 py-1 text-[11px] font-medium text-status-met hover:bg-status-met/25 transition-colors"
+                            className="inline-flex h-7 shrink-0 items-center rounded-md px-2 text-[11px] font-medium text-status-met transition-colors hover:bg-status-met/10"
                           >
                             Added
                           </button>
@@ -609,9 +645,10 @@ export default function CalendarPage() {
                           <button
                             onClick={() => addCourseFromCatalog(course)}
                             disabled={!activeSchedule}
-                            className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/20 transition-colors disabled:opacity-40"
+                            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-40"
                           >
-                            + Add
+                            <Plus className="h-3 w-3" />
+                            Add
                           </button>
                         )}
                       </div>
@@ -624,15 +661,15 @@ export default function CalendarPage() {
                 {/* Added courses list when no search */}
                 {activeSchedule && activeSchedule.courses.length > 0 && (
                   <div>
-                    <div className="px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Added courses
+                    <div className="px-3 pb-2 pt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      In this semester
                     </div>
                     {activeSchedule.courses.map((ev) => {
                       const unmet = prereqStatus.get(ev.id);
                       return (
                         <div
                           key={ev.id}
-                          className="border-b border-border px-3 py-2.5 hover:bg-accent/50 transition-colors cursor-pointer"
+                          className="cursor-pointer rounded-md px-3 py-2.5 transition-colors hover:bg-card/80"
                           onClick={() => {
                             setDetailEventId(ev.id);
                             setShowDetailModal(true);
@@ -642,14 +679,14 @@ export default function CalendarPage() {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
                                 <div
-                                  className="h-2 w-2 rounded-full shrink-0"
-                                  style={{ backgroundColor: ev.color }}
+                                  className="h-7 w-0.5 shrink-0 rounded-full"
+                                  style={{ backgroundColor: getCourseColor(ev.code) }}
                                 />
-                                <span className="font-mono text-sm font-bold text-foreground">
+                                <span className="font-mono text-[13px] font-semibold text-foreground">
                                   {ev.code}
                                 </span>
                                 {unmet && unmet.length > 0 && (
-                                  <span className="rounded bg-status-missing/15 px-1 py-0.5 text-[9px] font-medium text-status-missing">
+                                  <span className="text-[10px] font-medium text-status-missing">
                                     Missing prereq
                                   </span>
                                 )}
@@ -703,126 +740,131 @@ export default function CalendarPage() {
           </div>
         </aside>
 
-        {/* Right panel — Calendar */}
-        <main className="flex flex-1 flex-col overflow-hidden">
-          {/* Top bar */}
-          <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-2.5">
-            {/* Semester tabs */}
-            <div className="flex flex-1 items-center gap-1.5 overflow-x-auto">
-              {schedules.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveId(s.id)}
-                  className={`group flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                    activeId === s.id
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:bg-accent"
-                  }`}
-                >
-                  <span>
-                    {termLabel(s.term)} {s.year}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSemester(s.id);
-                    }}
-                    className="ml-0.5 rounded p-0.5 opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-card">
+          <div className="flex min-h-[58px] items-center gap-4 px-5 py-3">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              <h1 className="shrink-0 text-sm font-semibold tracking-[-0.01em] text-foreground">
+                Schedule
+              </h1>
+              <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+                {schedules.map((s) => (
+                  <div
+                    key={s.id}
+                    className="group relative flex shrink-0 items-center"
                   >
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                </button>
-              ))}
-
-              {!showNewSem ? (
-                <button
-                  onClick={() => setShowNewSem(true)}
-                  className="flex shrink-0 items-center gap-1 rounded-md border border-dashed border-border px-2.5 py-1 text-xs text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
-              ) : (
-                <div className="flex shrink-0 items-center gap-1 rounded-md border border-border bg-card px-1.5 py-0.5">
-                  <select
-                    value={newTerm}
-                    onChange={(e) =>
-                      setNewTerm(e.target.value as "fall" | "spring" | "summer")
-                    }
-                    className="h-6 rounded border border-input bg-card px-1 text-[11px] text-foreground"
-                  >
-                    {TERM_OPTIONS.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex items-center">
                     <button
-                      onClick={() => setNewYear((y) => y - 1)}
-                      className="rounded p-0.5 text-foreground hover:bg-accent"
+                      onClick={() => setActiveId(s.id)}
+                      className={`relative px-3 py-2 text-sm font-medium transition-colors after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full ${
+                        activeId === s.id
+                          ? "text-foreground after:bg-primary"
+                          : "text-muted-foreground after:bg-transparent hover:text-foreground"
+                      }`}
                     >
-                      <ChevronLeft className="h-3 w-3" />
+                      {termLabel(s.term)} {s.year}
                     </button>
-                    <span className="w-8 text-center text-[11px] font-medium text-foreground">
-                      {newYear}
-                    </span>
                     <button
-                      onClick={() => setNewYear((y) => y + 1)}
-                      className="rounded p-0.5 text-foreground hover:bg-accent"
+                      onClick={() => removeSemester(s.id)}
+                      className="mr-1 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                      aria-label={`Remove ${termLabel(s.term)} ${s.year}`}
                     >
-                      <ChevronRight className="h-3 w-3" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
+                ))}
+
+                {!showNewSem ? (
                   <button
-                    onClick={() => {
-                      addSemester(newTerm, newYear);
-                      setShowNewSem(false);
-                    }}
-                    className="rounded bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90"
+                    onClick={() => setShowNewSem(true)}
+                    className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    aria-label="Add semester"
                   >
-                    Add
+                    <Plus className="h-3.5 w-3.5" />
                   </button>
-                  <button
-                    onClick={() => setShowNewSem(false)}
-                    className="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
+                ) : (
+                  <div className="ml-1 flex shrink-0 items-center gap-1 rounded-md bg-muted p-1">
+                    <select
+                      value={newTerm}
+                      onChange={(e) =>
+                        setNewTerm(
+                          e.target.value as "fall" | "spring" | "summer"
+                        )
+                      }
+                      className="h-7 rounded border-0 bg-transparent px-2 text-xs text-foreground outline-none"
+                    >
+                      {TERM_OPTIONS.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => setNewYear((y) => y - 1)}
+                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                        aria-label="Previous year"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </button>
+                      <span className="w-9 text-center text-xs font-medium tabular-nums text-foreground">
+                        {newYear}
+                      </span>
+                      <button
+                        onClick={() => setNewYear((y) => y + 1)}
+                        className="rounded p-1 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                        aria-label="Next year"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        addSemester(newTerm, newYear);
+                        setShowNewSem(false);
+                      }}
+                      className="h-7 rounded bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                      Add
+                    </button>
+                    <button
+                      onClick={() => setShowNewSem(false)}
+                      className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label="Cancel"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Right side actions */}
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="text-xs tabular-nums text-muted-foreground">
                 {totalCredits} credits
               </span>
               <Button
                 onClick={openAddModal}
                 size="sm"
                 disabled={!activeId}
-                className="h-7 text-xs"
+                className="h-8 rounded-md px-3 text-xs shadow-none focus-visible:ring-offset-0"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Custom
+                Add course
               </Button>
             </div>
           </div>
 
-          {/* Calendar */}
           {activeSchedule ? (
-            <div className="flex-1 overflow-auto p-2">
-              <div className="calendar-container rounded-lg border border-border bg-card shadow-sm overflow-hidden h-full">
+            <div className="min-h-0 flex-1 px-4 pb-4">
+              <div className="calendar-container h-full overflow-hidden rounded-lg bg-background">
                 <FullCalendarWrapper {...calendarOptions} />
               </div>
             </div>
           ) : (
-            <div className="flex flex-1 items-center justify-center">
+            <div className="flex min-h-0 flex-1 items-center justify-center bg-background">
               <div className="text-center">
-                <CalendarDays className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+                <CalendarDays className="mx-auto mb-3 h-9 w-9 text-muted-foreground/25" />
                 <p className="text-sm text-muted-foreground">
-                  No semesters yet. Click{" "}
-                  <strong>+</strong> in the top bar to add one.
+                  Add a semester to start planning your week.
                 </p>
               </div>
             </div>
@@ -837,18 +879,18 @@ export default function CalendarPage() {
         const unmet = prereqStatus.get(ev.id);
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45"
             onClick={() => { setShowDetailModal(false); setDetailEventId(null); }}
           >
             <div
-              className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl"
+              className="mx-4 w-full max-w-md rounded-lg border border-border/70 bg-card p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
                     className="h-3 w-3 rounded-full shrink-0"
-                    style={{ backgroundColor: ev.color }}
+                    style={{ backgroundColor: getCourseColor(ev.code) }}
                   />
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">{ev.code}</h2>
@@ -863,19 +905,19 @@ export default function CalendarPage() {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-accent/50 p-3">
+              <div>
+                <div className="grid grid-cols-2 border-y border-border/60">
+                  <div className="py-3 pr-4">
                     <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Credits</p>
                     <p className="mt-0.5 text-sm font-semibold text-foreground">{ev.credits}</p>
                   </div>
-                  <div className="rounded-lg bg-accent/50 p-3">
+                  <div className="border-l border-border/60 py-3 pl-4">
                     <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Location</p>
                     <p className="mt-0.5 text-sm font-semibold text-foreground">{ev.location || "—"}</p>
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-accent/50 p-3">
+                <div className="border-b border-border/60 py-3">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Schedule</p>
                   <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {ev.daysOfWeek.map((d) => DAY_MAP[d]).join("/")}{" "}
@@ -884,34 +926,20 @@ export default function CalendarPage() {
                 </div>
 
                 {ev.prerequisite_courses && ev.prerequisite_courses.length > 0 && (
-                  <div className="rounded-lg bg-accent/50 p-3">
+                  <div className="border-b border-border/60 py-3">
                     <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Prerequisites</p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {ev.prerequisite_courses.map((p) => (
-                        <span
-                          key={p}
-                          className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-                        >
-                          {p}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="mt-1 text-sm text-foreground">
+                      {ev.prerequisite_courses.join(", ")}
+                    </p>
                   </div>
                 )}
 
                 {unmet && unmet.length > 0 && (
-                  <div className="rounded-lg bg-status-missing/10 p-3">
+                  <div className="border-b border-border/60 py-3">
                     <p className="text-[10px] font-medium uppercase tracking-wider text-status-missing">Missing Prerequisites</p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {unmet.map((p) => (
-                        <span
-                          key={p}
-                          className="inline-flex items-center rounded-md bg-status-missing/15 px-2 py-0.5 text-xs font-medium text-status-missing"
-                        >
-                          {p}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="mt-1 text-sm text-status-missing">
+                      {unmet.join(", ")}
+                    </p>
                   </div>
                 )}
 
@@ -948,8 +976,8 @@ export default function CalendarPage() {
 
       {/* Add/Edit Custom Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
+          <div className="mx-4 w-full max-w-md rounded-lg border border-border/70 bg-card p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 {editingId ? "Edit Course" : "Add Course"}

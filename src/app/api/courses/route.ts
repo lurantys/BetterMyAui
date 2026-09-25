@@ -26,7 +26,7 @@ let cached: CatalogData | null = null;
 function getCatalog(): CatalogData {
   if (!cached) {
     const raw = readFileSync(
-      join(process.cwd(), "aui_catalog_data.json"),
+      join(process.cwd(), "data", "catalog", "aui_catalog_data.json"),
       "utf-8"
     );
     cached = JSON.parse(raw) as CatalogData;

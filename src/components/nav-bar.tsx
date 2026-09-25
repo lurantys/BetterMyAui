@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -10,7 +11,6 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useTheme } from "@/lib/theme-provider";
 
 const navItems = [
   { href: "/calendar", icon: CalendarDays, label: "Schedule" },
@@ -20,27 +20,28 @@ const navItems = [
 
 export function NavBar({ active }: { active: string }) {
   const [expanded, setExpanded] = useState(false);
-  const { resolvedTheme } = useTheme();
 
   return (
     <nav
-      className={`flex shrink-0 flex-col border-r border-border bg-card py-3 transition-all duration-200 ${
-        expanded ? "w-44" : "w-14"
+      className={`sticky top-0 flex h-screen shrink-0 flex-col bg-background py-3 transition-[width] duration-200 ${
+        expanded ? "w-[184px]" : "w-[60px]"
       }`}
     >
       <div className="mb-2 px-2">
         {expanded ? (
           <div className="relative flex items-center justify-center">
             <Link href="/" className="shrink-0">
-              <img
-                src={resolvedTheme === "dark" ? "/logowhiteaui.png" : "/logoaui.png"}
+              <Image
+                src="/assets/brand/favicon.png"
                 alt="Jenzabar+"
-                className="h-12 w-auto"
+                width={40}
+                height={40}
+                className="h-10 w-10"
               />
             </Link>
             <button
               onClick={() => setExpanded(false)}
-              className="absolute right-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="absolute right-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               title="Collapse"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -49,7 +50,7 @@ export function NavBar({ active }: { active: string }) {
         ) : (
           <button
             onClick={() => setExpanded(true)}
-            className="flex w-full items-center justify-center rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex w-full items-center justify-center rounded-md px-2 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title="Expand"
           >
             <PanelLeftOpen className="h-4 w-4" />
@@ -57,9 +58,7 @@ export function NavBar({ active }: { active: string }) {
         )}
       </div>
 
-      <div className={`mb-2 mx-2 h-px bg-border ${expanded ? "" : "mx-auto w-8"}`} />
-
-      <div className="flex flex-col gap-0.5 px-2">
+      <div className="mb-5 flex flex-col gap-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.href;
@@ -67,14 +66,18 @@ export function NavBar({ active }: { active: string }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              } ${expanded ? "" : "justify-center"}`}
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+              } ${expanded ? "px-2.5" : "justify-center px-0"}`}
               title={item.label}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon
+                className={`h-4 w-4 shrink-0 ${
+                  isActive ? "text-primary" : ""
+                }`}
+              />
               {expanded && <span>{item.label}</span>}
             </Link>
           );

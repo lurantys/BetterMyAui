@@ -10,7 +10,6 @@ import {
 } from "react";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { NavBar } from "@/components/nav-bar";
 
 interface Course {
@@ -36,9 +35,26 @@ interface ApiResponse {
 const PAGE_SIZE = 50;
 const DEBOUNCE_MS = 300;
 
+function hasAdditionalPrerequisiteDetails(
+  raw: string,
+  codes: string[]
+): boolean {
+  let normalized = raw.toUpperCase().replace(/[^A-Z0-9]+/g, "");
+
+  for (const code of codes) {
+    normalized = normalized.replace(
+      code.toUpperCase().replace(/[^A-Z0-9]+/g, ""),
+      ""
+    );
+  }
+
+  return normalized.replace(/AND|OR/g, "").length > 0;
+}
+
 export default function CatalogPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [disciplines, setDisciplines] = useState<Record<string, string>>({});
+  const [courseNames, setCourseNames] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedDiscipline, setSelectedDiscipline] = useState("");
@@ -47,38 +63,40 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const abortRef = useRef<AbortController | null>(null);
+  const loadingMoreRef = useRef(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
-      setVisibleCount(PAGE_SIZE);
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Fetch disciplines once on mount (no dependency on query filters)
   useEffect(() => {
     fetch("/api/courses")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data: ApiResponse) => {
         setDisciplines(data.disciplines);
+        setCourseNames(
+          Object.fromEntries(
+            data.courses.map((course) => [course.code.toUpperCase(), course.title])
+          )
+        );
       })
       .catch(() => {});
   }, []);
 
-  // Fetch courses with AbortController to prevent race conditions
   useEffect(() => {
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-
+    abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
     startTransition(() => {
       setLoading(true);
       setCourses([]);
+      setVisibleCount(PAGE_SIZE);
+      loadingMoreRef.current = false;
     });
 
     const params = new URLSearchParams();
@@ -87,192 +105,253 @@ export default function CatalogPage() {
     if (selectedLevel) params.set("level", selectedLevel);
 
     fetch(`/api/courses?${params}`, { signal: controller.signal })
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data: ApiResponse) => {
         if (controller.signal.aborted) return;
         setCourses(data.courses);
         setLoading(false);
       })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setLoading(false);
-        }
+      .catch((error) => {
+        if (error.name !== "AbortError") setLoading(false);
       });
 
     return () => controller.abort();
   }, [debouncedQuery, selectedDiscipline, selectedLevel]);
 
+  const loadMore = useCallback(() => {
+    if (loadingMoreRef.current || visibleCount >= courses.length) return;
+
+    loadingMoreRef.current = true;
+    setVisibleCount(
+      Math.min(visibleCount + PAGE_SIZE, courses.length)
+    );
+    requestAnimationFrame(() => {
+      loadingMoreRef.current = false;
+    });
+  }, [courses.length, visibleCount]);
+
+  useEffect(() => {
+    if (loading || visibleCount >= courses.length) return;
+
+    const checkWindowScroll = () => {
+      const sentinel = loadMoreRef.current;
+      if (!sentinel) return;
+
+      const sentinelRect = sentinel.getBoundingClientRect();
+      if (sentinelRect.top <= window.innerHeight + 320) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener("scroll", checkWindowScroll, { passive: true });
+    window.addEventListener("resize", checkWindowScroll);
+    checkWindowScroll();
+
+    return () => {
+      window.removeEventListener("scroll", checkWindowScroll);
+      window.removeEventListener("resize", checkWindowScroll);
+    };
+  }, [courses.length, loadMore, loading, visibleCount]);
+
   const disciplineCodes = useMemo(
     () => Object.keys(disciplines).sort(),
     [disciplines]
   );
-
   const visibleCourses = useMemo(
     () => courses.slice(0, visibleCount),
     [courses, visibleCount]
   );
 
-  const hasMore = visibleCount < courses.length;
-
-  const loadMore = useCallback(() => {
-    setVisibleCount((prev) => prev + PAGE_SIZE);
-  }, []);
-
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex min-h-screen">
         <NavBar active="/catalog" />
 
-        <main className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-auto px-6 py-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Course Catalog
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Browse all courses from the AUI Academic Catalog 2024-2025
-            </p>
-          </div>
+        <main className="min-w-0 flex-1">
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-8 sm:px-8">
+            <header className="mb-7">
+              <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground">
+                Course catalog
+              </h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                AUI Academic Catalog 2024–2025
+              </p>
+            </header>
 
-          {/* Filters */}
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by code or title..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="relative">
-              <select
-                value={selectedDiscipline}
-                onChange={(e) => setSelectedDiscipline(e.target.value)}
-                className="h-9 appearance-none rounded-md border border-input bg-transparent px-3 pr-8 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">All disciplines</option>
-                {disciplineCodes.map((code) => (
-                  <option key={code} value={code}>
-                    {code} - {disciplines[code]}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-            <div className="relative">
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
-                className="h-9 appearance-none rounded-md border border-input bg-transparent px-3 pr-8 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">All levels</option>
-                <option value="undergraduate">Undergraduate</option>
-                <option value="graduate">Graduate</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-
-          <div className="mb-4 text-xs text-muted-foreground">
-            {loading ? "Loading..." : `${courses.length} courses`}
-          </div>
-
-          {/* Course list */}
-          <div className="space-y-2">
-            {visibleCourses.map((course) => (
-              <div
-                key={course.code}
-                className="rounded-lg border border-border bg-card"
-              >
-                <button
-                  onClick={() =>
-                    setExpandedCourse(
-                      expandedCourse === course.code ? null : course.code
-                    )
-                  }
-                  className="flex w-full items-center justify-between p-4 text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm font-medium text-primary">
-                      {course.code}
-                    </span>
-                    <span className="text-sm">{course.title}</span>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {course.credits} cr
-                    </Badge>
-                    {course.level === "graduate" && (
-                      <Badge variant="info" className="text-[10px]">
-                        Grad
-                      </Badge>
-                    )}
-                  </div>
-                  {expandedCourse === course.code ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-
-                {expandedCourse === course.code && (
-                  <div className="border-t border-border px-4 pb-4 pt-3">
-                    <p className="text-sm text-muted-foreground">
-                      {course.description}
-                    </p>
-
-                    {course.prerequisite_raw && (
-                      <div className="mt-3">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Prerequisites:{" "}
-                        </span>
-                        <span className="text-xs">
-                          {course.prerequisite_raw}
-                        </span>
-                      </div>
-                    )}
-
-                    {course.corequisite_raw && (
-                      <div className="mt-1">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Corequisites:{" "}
-                        </span>
-                        <span className="text-xs">
-                          {course.corequisite_raw}
-                        </span>
-                      </div>
-                    )}
-
-                    {course.other_requirement_notes && (
-                      <div className="mt-1">
-                        <Badge variant="warning" className="text-[10px]">
-                          {course.other_requirement_notes}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                )}
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by code or title"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="h-9 rounded-md bg-card pl-9 shadow-none"
+                />
               </div>
-            ))}
-          </div>
+              <div className="relative">
+                <select
+                  value={selectedDiscipline}
+                  onChange={(event) => setSelectedDiscipline(event.target.value)}
+                  className="h-9 appearance-none rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
+                >
+                  <option value="">All disciplines</option>
+                  {disciplineCodes.map((code) => (
+                    <option key={code} value={code}>
+                      {code} — {disciplines[code]}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedLevel}
+                  onChange={(event) => setSelectedLevel(event.target.value)}
+                  className="h-9 appearance-none rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
+                >
+                  <option value="">All levels</option>
+                  <option value="undergraduate">Undergraduate</option>
+                  <option value="graduate">Graduate</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
 
-          {hasMore && !loading && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={loadMore}
-                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            <div className="mb-3 text-xs tabular-nums text-muted-foreground">
+              {loading ? "Loading courses" : `${courses.length} courses`}
+            </div>
+
+            <div className="overflow-hidden rounded-lg bg-card">
+              <div className="divide-y divide-border/60">
+                {visibleCourses.map((course) => {
+                  const expanded = expandedCourse === course.code;
+                  return (
+                    <div key={course.code}>
+                      <button
+                        onClick={() =>
+                          setExpandedCourse(expanded ? null : course.code)
+                        }
+                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/35"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="font-mono text-sm font-semibold text-foreground">
+                            {course.code}
+                          </span>
+                          <span className="truncate text-sm text-foreground/90">
+                            {course.title}
+                          </span>
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {course.credits} cr
+                          </span>
+                          {course.level === "graduate" && (
+                            <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              Graduate
+                            </span>
+                          )}
+                        </div>
+                        {expanded ? (
+                          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                      </button>
+
+                      {expanded && (
+                        <div className="bg-muted/20 px-5 pb-5 pt-4">
+                          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                            {course.description}
+                          </p>
+                          {course.prerequisite_courses.length > 0 && (
+                            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                              <span className="font-medium text-muted-foreground">
+                                Prerequisites:
+                              </span>
+                              {course.prerequisite_courses.map((code) => {
+                                const normalizedCode = code.trim().toUpperCase();
+                                const name = courseNames[normalizedCode];
+                                return (
+                                  <span
+                                    key={`${course.code}-${code}`}
+                                    className="group relative inline-flex outline-none"
+                                    tabIndex={0}
+                                    aria-label={name ? `${code}: ${name}` : code}
+                                  >
+                                    <span className="cursor-help font-mono font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors group-hover:decoration-primary group-focus-within:decoration-primary">
+                                      {code}
+                                    </span>
+                                    {name && (
+                                      <span
+                                        role="tooltip"
+                                        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-64 -translate-x-1/2 whitespace-normal rounded-md border border-border bg-popover px-3 py-2 text-left text-xs leading-5 text-popover-foreground shadow-lg group-hover:block group-focus-within:block"
+                                      >
+                                        {name}
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {course.prerequisite_raw &&
+                            (course.prerequisite_courses.length === 0 ||
+                              hasAdditionalPrerequisiteDetails(
+                                course.prerequisite_raw,
+                                course.prerequisite_courses
+                              )) && (
+                              <p
+                                className={`text-xs text-foreground ${
+                                  course.prerequisite_courses.length > 0
+                                    ? "mt-1.5"
+                                    : "mt-3"
+                                }`}
+                              >
+                                <span className="font-medium text-muted-foreground">
+                                  {course.prerequisite_courses.length > 0
+                                    ? "Notes: "
+                                    : "Prerequisites: "}
+                                </span>
+                                {course.prerequisite_raw}
+                              </p>
+                            )}
+                          {course.corequisite_raw && (
+                            <p className="mt-1.5 text-xs text-foreground">
+                              <span className="font-medium text-muted-foreground">
+                                Corequisites:{" "}
+                              </span>
+                              {course.corequisite_raw}
+                            </p>
+                          )}
+                          {course.other_requirement_notes && (
+                            <p className="mt-2 text-xs text-status-missing">
+                              {course.other_requirement_notes}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {!loading && visibleCount < courses.length && (
+              <div
+                ref={loadMoreRef}
+                className="flex h-12 items-center justify-center"
+                aria-live="polite"
               >
-                Show more ({courses.length - visibleCount} remaining)
-              </button>
-            </div>
-          )}
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-border border-t-primary" />
+                <span className="sr-only">Loading more courses</span>
+              </div>
+            )}
 
-          {!loading && courses.length === 0 && (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              No courses match your search.
-            </div>
-          )}
-        </div>
-      </main>
+            {!loading && courses.length === 0 && (
+              <div className="py-20 text-center text-sm text-muted-foreground">
+                No courses match your search.
+              </div>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );

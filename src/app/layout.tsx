@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "Track your AUI courses, prerequisites, GPA, and semester plans",
   icons: {
-    icon: "/favicon.png",
+    icon: "/assets/brand/favicon.png",
   },
 };
 

@@ -1,78 +1,93 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CalendarDays, BookOpen, LayoutGrid, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
-      <header className="flex items-center justify-end px-6 py-5 sm:px-10">
-        <div className="flex items-center gap-3">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="flex items-center justify-between px-6 py-5 sm:px-10">
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/assets/brand/favicon.png"
+            alt="Jenzabar+"
+            width={32}
+            height={32}
+            className="h-8 w-8"
+          />
+          <span className="text-sm font-semibold tracking-[-0.01em]">
+            Jenzabar+
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <Link
             href="/calendar"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Open app
           </Link>
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
-        <div className="flex max-w-2xl flex-col items-center text-center">
-          <div className="relative mb-8">
-            <img src="/logoaui.png" alt="" className="h-28 w-auto dark:hidden" />
-            <img
-              src="/logowhiteaui.png"
-              alt=""
-              className="hidden h-28 w-auto dark:block"
-            />
-          </div>
-
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Plan your semesters.
-            <br />
-            Track your progress.
-          </h1>
-          <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
-            Schedule courses, check prerequisites, and monitor your GPA — all in
-            one place built for AUI students.
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-20">
+        <div className="max-w-3xl text-center">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">
+            Academic planning for AUI
           </p>
-          <Link
-            href="/calendar"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go to dashboard
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <h1 className="mt-5 text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
+            Your academic year,
+            <br />
+            clearly planned.
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+            Build a weekly schedule, check prerequisites, and keep your GPA
+            current without leaving your browser.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <Link
+              href="/calendar"
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Open schedule
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/catalog"
+              className="inline-flex h-10 items-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              Browse catalog
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-20 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
-          <FeatureCard
-            icon={<CalendarDays className="h-5 w-5" />}
+        <div className="mt-24 grid w-full max-w-4xl grid-cols-1 divide-y divide-border/60 border-t border-border/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <FeatureItem
+            icon={<CalendarDays className="h-4 w-4" />}
             title="Schedule"
-            description="Build your weekly timetable with drag-and-drop. Detect conflicts before they happen."
+            description="Plan each week and keep prerequisite checks visible."
           />
-          <FeatureCard
-            icon={<BookOpen className="h-5 w-5" />}
+          <FeatureItem
+            icon={<BookOpen className="h-4 w-4" />}
             title="Catalog"
-            description="Browse every AUI course. Search by code, name, or discipline with instant results."
+            description="Find AUI courses by code, title, or discipline."
           />
-          <FeatureCard
-            icon={<LayoutGrid className="h-5 w-5" />}
+          <FeatureItem
+            icon={<LayoutGrid className="h-4 w-4" />}
             title="My Career"
-            description="Track completed courses, assign grades, and watch your GPA update in real time."
+            description="Record completed courses and track cumulative GPA."
           />
         </div>
       </main>
 
-      <footer className="border-t border-border px-6 py-4 text-center text-xs text-muted-foreground">
+      <footer className="px-6 py-5 text-center text-xs text-muted-foreground">
         Built for Al Akhawayn University students
       </footer>
     </div>
   );
 }
 
-function FeatureCard({
+function FeatureItem({
   icon,
   title,
   description,
@@ -82,12 +97,10 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 text-left">
-      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <h3 className="text-sm font-medium text-foreground">{title}</h3>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+    <div className="py-6 sm:px-6 sm:first:pl-0">
+      <div className="flex items-center gap-2 text-primary">{icon}</div>
+      <h2 className="mt-3 text-sm font-semibold text-foreground">{title}</h2>
+      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
         {description}
       </p>
     </div>

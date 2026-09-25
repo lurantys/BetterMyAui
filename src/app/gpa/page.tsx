@@ -534,21 +534,20 @@ export default function CareerPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <NavBar active="/gpa" />
 
-        <main className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-auto px-6 py-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">My Career</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Track your courses across all semesters and see your cumulative
-              GPA
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-6 py-8 sm:px-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground">My Career</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Courses, completed credits, and cumulative GPA
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_300px]">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-6">
               {/* Tab filter */}
               <div className="flex items-center gap-2">
@@ -562,10 +561,10 @@ export default function CareerPage() {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                       activeTab === tab.key
-                        ? "border-primary bg-primary/5 text-primary font-medium"
-                        : "border-border text-muted-foreground hover:text-foreground"
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                     }`}
                   >
                     {tab.label}
@@ -576,38 +575,40 @@ export default function CareerPage() {
               {/* Semester tabs */}
               <div className="flex flex-wrap items-center gap-2">
                 {filteredSchedules.map((s) => (
-                  <button
+                  <div
                     key={s.id}
-                    onClick={() => setActiveId(s.id)}
-                    className={`group flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                      activeId === s.id
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card text-muted-foreground hover:bg-accent"
-                    }`}
+                    className="group flex items-center rounded-md bg-card"
                   >
-                    <span>
-                      {termLabel(s.term)} {s.year}
-                    </span>
-                    {s._source === "past" && (
-                      <span className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        past
+                    <button
+                      onClick={() => setActiveId(s.id)}
+                      className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        activeId === s.id
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                      }`}
+                    >
+                      <span>
+                        {termLabel(s.term)} {s.year}
                       </span>
-                    )}
-                    <span className="text-xs opacity-60">
-                      {s.courses.length} cr
-                    </span>
+                      {s._source === "past" && (
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Past
+                        </span>
+                      )}
+                      <span className="text-xs tabular-nums opacity-60">
+                        {s.courses.reduce((sum, course) => sum + course.credits, 0)} cr
+                      </span>
+                    </button>
                     {s._source === "past" && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deletePastSemester(s.id);
-                        }}
-                        className="ml-1 rounded p-0.5 opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                        onClick={() => deletePastSemester(s.id)}
+                        className="mr-1 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                        aria-label={`Remove ${termLabel(s.term)} ${s.year}`}
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
                     )}
-                  </button>
+                  </div>
                 ))}
 
                 {activeTab !== "calendar" && (
@@ -616,21 +617,21 @@ export default function CareerPage() {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setShowAddPast(true)}
-                          className="flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                          className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           <span>Add past semester</span>
                         </button>
                         <button
                           onClick={() => setShowImport(true)}
-                          className="flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                          className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           <Upload className="h-3.5 w-3.5" />
                           <span>Import transcript</span>
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1">
+                      <div className="flex items-center gap-1.5 rounded-md bg-muted p-1">
                         <select
                           value={pastTerm}
                           onChange={(e) =>
@@ -638,7 +639,7 @@ export default function CareerPage() {
                               e.target.value as "fall" | "spring" | "summer"
                             )
                           }
-                          className="h-7 rounded border border-input bg-card px-1.5 text-xs text-foreground"
+                          className="h-7 rounded border-0 bg-transparent px-2 text-xs text-foreground outline-none"
                         >
                           {TERM_OPTIONS.map((t) => (
                             <option key={t.value} value={t.value}>
@@ -693,7 +694,7 @@ export default function CareerPage() {
                             <div>
                               <button
                                 onClick={() => setSearchOpen(!searchOpen)}
-                                className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent transition-colors"
+                                className="flex w-full items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent"
                               >
                                 <Search className="h-4 w-4" />
                                 {searchOpen
@@ -712,7 +713,7 @@ export default function CareerPage() {
                                     autoFocus
                                   />
                                   {searchResults.length > 0 && (
-                                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-lg">
+                                    <div className="absolute z-10 mt-1 w-full rounded-md bg-card ring-1 ring-border/70">
                                       {searchResults.map((c) => (
                                         <button
                                           key={c.code}
@@ -836,7 +837,7 @@ export default function CareerPage() {
                               setNewCourseCredits("3");
                               setNewCourseGrade("A");
                             }}
-                            className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                            className="flex w-full items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent"
                           >
                             <Plus className="h-4 w-4" />
                             Add course
@@ -847,9 +848,9 @@ export default function CareerPage() {
                   )}
 
                   {/* Course list */}
-                  <div className="space-y-1.5">
+                  <div className="divide-y divide-border/60 overflow-hidden rounded-lg bg-card">
                     {activeSchedule.courses.length === 0 && (
-                      <div className="rounded-lg border border-dashed border-border py-12 text-center">
+                      <div className="py-12 text-center">
                         <BookOpen className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
                         <p className="text-sm text-muted-foreground">
                           {activeSchedule._source === "past"
@@ -861,11 +862,11 @@ export default function CareerPage() {
                     {activeSchedule.courses.map((course) => (
                       <div
                         key={course.id}
-                        className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
+                        className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-accent/30"
                       >
                         <div
                           className="h-2.5 w-2.5 rounded-sm shrink-0"
-                          style={{ backgroundColor: course.color }}
+                          style={{ backgroundColor: getCourseColor(course.code) }}
                         />
                         <div className="min-w-0 flex-1">
                           <span className="font-mono text-sm font-medium text-primary">
@@ -916,7 +917,7 @@ export default function CareerPage() {
                   </div>
 
                   {activeSchedule.courses.length > 0 && (
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+                    <div className="flex items-center justify-between border-y border-border/60 px-1 py-3">
                       <div className="flex gap-4 text-xs text-muted-foreground">
                         <span>
                           {activeSchedule.courses.length} course
@@ -950,7 +951,7 @@ export default function CareerPage() {
                   )}
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-border py-16 text-center">
+                <div className="py-20 text-center">
                   <GraduationCap className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground">
                     {allSchedules.length === 0
@@ -992,7 +993,7 @@ export default function CareerPage() {
                     ) : (
                       <button
                         onClick={() => { setEditMajor(true); setMajorValue(profile?.major ?? ""); }}
-                        className="mt-0.5 block w-full text-left text-sm text-foreground hover:text-primary transition-colors"
+                        className="mt-0.5 block w-full text-left text-sm text-foreground transition-colors hover:text-primary"
                       >
                         {profile?.major || <span className="text-muted-foreground italic">Click to add</span>}
                       </button>
@@ -1015,7 +1016,7 @@ export default function CareerPage() {
                     ) : (
                       <button
                         onClick={() => { setEditMinor(true); setMinorValue(profile?.minor ?? ""); }}
-                        className="mt-0.5 block w-full text-left text-sm text-foreground hover:text-primary transition-colors"
+                        className="mt-0.5 block w-full text-left text-sm text-foreground transition-colors hover:text-primary"
                       >
                         {profile?.minor || <span className="text-muted-foreground italic">Click to add</span>}
                       </button>
@@ -1114,7 +1115,7 @@ export default function CareerPage() {
                               {stat.label}
                             </span>
                             {stat.source === "past" && (
-                              <span className="rounded bg-muted px-1 py-0.5 text-[9px] text-muted-foreground">
+                              <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
                                 past
                               </span>
                             )}
@@ -1146,8 +1147,8 @@ export default function CareerPage() {
 
       {/* Transcript Import Modal */}
       {showImport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-border bg-card shadow-xl flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
+          <div className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <h2 className="text-lg font-semibold">Import Transcript</h2>
               <button
@@ -1175,7 +1176,7 @@ export default function CareerPage() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={importLoading}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                   >
                     {importLoading ? "Parsing..." : "Choose PDF file"}
                   </button>
@@ -1215,11 +1216,11 @@ export default function CareerPage() {
                   </div>
 
                   {parsedSemesters.map((sem, semIdx) => (
-                    <div key={semIdx} className="rounded-lg border border-border">
+                    <div key={semIdx} className="overflow-hidden rounded-md bg-card ring-1 ring-border/60">
                       <button
                         onClick={() => toggleImportSelection(semIdx)}
                         className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                          selectedForImport.has(semIdx) ? "bg-primary/5" : "bg-muted/50"
+                          selectedForImport.has(semIdx) ? "bg-accent/60" : "bg-transparent"
                         }`}
                       >
                         <input
