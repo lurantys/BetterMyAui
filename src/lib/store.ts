@@ -348,7 +348,7 @@ export function getCourseColor(code: string): string {
 
 // --- Semester ordering ---
 
-const TERM_ORDER = { fall: 0, spring: 1, summer: 2 } as const;
+const TERM_ORDER = { spring: 0, summer: 1, fall: 2 } as const;
 
 export function sortSemestersChronologically(
   semesters: SemesterSchedule[]

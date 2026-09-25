@@ -206,7 +206,7 @@ export default function CareerPage() {
       ...calendarSchedules.map((s) => ({ ...s, _source: "calendar" as const })),
       ...pastSchedules.map((s) => ({ ...s, _source: "past" as const })),
     ];
-    const termOrder = { fall: 0, spring: 1, summer: 2 } as const;
+    const termOrder = { spring: 0, summer: 1, fall: 2 } as const;
     return all.sort((a, b) => {
       if (a.year !== b.year) return a.year - b.year;
       return termOrder[a.term] - termOrder[b.term];
