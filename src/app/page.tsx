@@ -225,7 +225,7 @@ export default function Home() {
       </main>
 
       <footer className="px-6 py-5 text-center text-xs text-muted-foreground">
-        Built for Al Akhawayn University students
+        Al Akhawayn University, P.O. Box 104, Hassan II Avenue, 53000 Ifrane, Morocco
       </footer>
     </div>
   );
