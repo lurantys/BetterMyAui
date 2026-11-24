@@ -52,6 +52,12 @@ interface ScheduleWithSource extends SemesterSchedule {
   _source: "calendar" | "past";
 }
 
+function getTranscriptCourseCredits(code: string, catalogCredits?: number): number {
+  const match = code.match(/^[A-Z]{2,5}\s*\d(\d)/i);
+  const encodedCredits = match ? Number.parseInt(match[1], 10) : 0;
+  return encodedCredits > 0 ? encodedCredits : (catalogCredits && catalogCredits > 0 ? catalogCredits : 3);
+}
+
 function GpaGauge({ gpa, label }: { gpa: number; label: string }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -337,51 +343,56 @@ export default function CareerPage() {
       const res = await fetch("/api/courses");
       const data = await res.json();
       for (const c of data.courses ?? []) {
-        catalogMap.set(c.code.toUpperCase(), c);
+        catalogMap.set(c.code.toUpperCase().replace(/\s+/g, ""), c);
       }
     } catch {}
 
-    const newPast: SemesterSchedule[] = toImport.map((sem) => ({
-      id: generateId(),
-      term: sem.term,
-      year: sem.year,
-      courses: sem.courses.map((c) => {
-        const catalog = catalogMap.get(c.code.toUpperCase());
-        return {
-          id: generateId(),
-          code: c.code,
-          title: catalog?.title || c.title,
-          credits: c.credits > 0 ? c.credits : (catalog?.credits ?? 3),
-          daysOfWeek: [],
-          startTime: "",
-          endTime: "",
-          location: "",
-          color: getCourseColor(c.code),
-          prerequisite_courses: catalog?.prerequisite_courses ?? [],
-          grade: c.grade,
-          gradePoints: GRADE_OPTIONS.find((g) => g.letter === c.grade)?.points ?? null,
-        };
-      }),
-    }));
+    const importedCourses = (sem: ParsedSemester) => sem.courses.map((c) => {
+      const catalog = catalogMap.get(c.code.toUpperCase().replace(/\s+/g, ""));
+      return {
+        id: generateId(),
+        code: c.code,
+        title: catalog?.title || c.title,
+        credits: /-L$/i.test(c.code) || c.grade === "NG" || /exchange program/i.test(c.title)
+          ? 0
+          : getTranscriptCourseCredits(c.code, catalog?.credits),
+        daysOfWeek: [],
+        startTime: "",
+        endTime: "",
+        location: "",
+        color: getCourseColor(c.code),
+        prerequisite_courses: catalog?.prerequisite_courses ?? [],
+        grade: c.grade === "WIP" ? null : c.grade,
+        gradePoints: c.grade === "WIP" ? null : (GRADE_OPTIONS.find((g) => g.letter === c.grade)?.points ?? null),
+      };
+    });
 
-    setPastSchedules((prev) => {
+    const mergeSchedules = (prev: SemesterSchedule[], incoming: SemesterSchedule[]) => {
       const existing = new Map(prev.map((s) => [`${s.term}-${s.year}`, s]));
-      for (const sem of newPast) {
+      for (const sem of incoming) {
         const key = `${sem.term}-${sem.year}`;
-        if (existing.has(key)) {
-          const existingSem = existing.get(key)!;
-          const existingCodes = new Set(existingSem.courses.map((c) => c.code));
-          const newCourses = sem.courses.filter((c) => !existingCodes.has(c.code));
-          existing.set(key, {
-            ...existingSem,
-            courses: [...existingSem.courses, ...newCourses],
-          });
-        } else {
-          existing.set(key, sem);
+        const current = existing.get(key);
+        if (!current) existing.set(key, sem);
+        else {
+          const codes = new Set(current.courses.map((c) => c.code));
+          existing.set(key, { ...current, courses: [...current.courses, ...sem.courses.filter((c) => !codes.has(c.code))] });
         }
       }
       return Array.from(existing.values());
-    });
+    };
+
+    const newPast: SemesterSchedule[] = [];
+    const newCalendar: SemesterSchedule[] = [];
+    for (const sem of toImport) {
+      const courses = importedCourses(sem);
+      const completed = courses.filter((c) => c.grade !== null);
+      const inProgress = courses.filter((c) => c.grade === null);
+      if (completed.length) newPast.push({ id: generateId(), term: sem.term, year: sem.year, courses: completed });
+      if (inProgress.length) newCalendar.push({ id: generateId(), term: sem.term, year: sem.year, courses: inProgress });
+    }
+
+    if (newPast.length) setPastSchedules((prev) => mergeSchedules(prev, newPast));
+    if (newCalendar.length) setCalendarSchedules((prev) => mergeSchedules(prev, newCalendar));
 
     setShowImport(false);
     setParsedSemesters([]);
@@ -494,8 +505,14 @@ export default function CareerPage() {
     [allSchedules]
   );
   const totalCredits = useMemo(
-    () => calculateTotalCredits(allSchedules),
-    [allSchedules]
+    () => calculateTotalCredits(allSchedules) + calendarSchedules.reduce(
+      (sum, semester) => sum + semester.courses.reduce(
+        (semesterSum, course) => semesterSum + (course.grade === null ? course.credits : 0),
+        0
+      ),
+      0
+    ),
+    [allSchedules, calendarSchedules]
   );
   const totalCourses = useMemo(
     () => allSchedules.reduce((sum, s) => sum + s.courses.length, 0),
@@ -516,9 +533,10 @@ export default function CareerPage() {
         label: `${termLabel(sem.term)} ${sem.year}`,
         source: sem._source,
         gpa: calculateSemesterGpa(sem.courses),
-        credits: sem.courses.filter(
-          (c) =>
-            c.grade !== null && !["W", "I"].includes(c.grade)
+        credits: sem.courses.filter((c) =>
+          sem._source === "calendar"
+            ? c.grade === null
+            : c.grade !== null && !["W", "I"].includes(c.grade)
         ).reduce((sum, c) => sum + c.credits, 0),
         courseCount: sem.courses.length,
       })),

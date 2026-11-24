@@ -101,8 +101,12 @@ function getEndTimeForStart(start: string, days: number[]): string {
   return minutesToTime(clamped);
 }
 
-function formatTime12(t: string): string {
+function formatTime12(t: string | null | undefined): string {
+  if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return "Time not set";
   const [h, m] = t.split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m) || h > 23 || m > 59) {
+    return "Time not set";
+  }
   const period = h >= 12 ? "PM" : "AM";
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
@@ -696,7 +700,9 @@ export default function CalendarPage() {
                               </p>
                               <p className="mt-0.5 text-[10px] text-muted-foreground">
                                 {ev.daysOfWeek.map((d) => DAY_MAP[d]).join("/")}{" "}
-                                {formatTime12(ev.startTime)}–{formatTime12(ev.endTime)}
+                                {ev.startTime || ev.endTime
+                                  ? `${formatTime12(ev.startTime)}–${formatTime12(ev.endTime)}`
+                                  : "Time not set"}
                                 {ev.location && ` · ${ev.location}`}
                               </p>
                             </div>
@@ -707,9 +713,11 @@ export default function CalendarPage() {
                                   activeSchedule.courses.filter((c) => c.id !== ev.id)
                                 );
                               }}
-                              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              aria-label={`Remove ${ev.code} from this semester`}
+                              title={`Remove ${ev.code}`}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" strokeWidth={2.25} />
                             </button>
                           </div>
                         </div>
@@ -921,7 +929,9 @@ export default function CalendarPage() {
                   <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Schedule</p>
                   <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {ev.daysOfWeek.map((d) => DAY_MAP[d]).join("/")}{" "}
-                    {formatTime12(ev.startTime)}–{formatTime12(ev.endTime)}
+                    {ev.startTime || ev.endTime
+                      ? `${formatTime12(ev.startTime)}–${formatTime12(ev.endTime)}`
+                      : "Time not set"}
                   </p>
                 </div>
 

@@ -16,9 +16,9 @@ export interface ParsedSemester {
   courses: ParsedCourse[];
 }
 
-const SEMESTER_RE = /(\d{4})\s*[-–]\s*\d{4}\s+Academic\s+Year\s*:?\s*(Fall|Spring|Summer)\s+Semester/i;
+const SEMESTER_RE = /(\d{4})\s*[-\u2013\u2014]\s*(\d{4})\s+Academic\s+Year\s*:?\s*(Fall|Spring|Summer)\s+Semester/i;
 const COURSE_RE = /^[A-Z]{2,5}\s*\d{4}(?:-L)?$/i;
-const GRADE_RE = /^(?:A\+?|A-|B\+?|B-|C\+?|C-|D\+?|D-|F|P|W|I|NG)$/i;
+const GRADE_RE = /^(?:A\+?|A-|B\+?|B-|C\+?|C-|D\+?|D-|F|P|W|I|NG|WIP)$/i;
 const EXCLUDED_TITLE_RE = /^(?:course\s+)?(?:number|title|grade|credits?|cr|type|repeat|hours?|gpa|semester|academic\s+year|totals?)\b/i;
 
 interface TextItem {
@@ -76,12 +76,14 @@ function parseCourseLine(line: TextLine): ParsedCourse | null {
     .filter(({ x }) => x !== creditItem?.item.x)
     .map((item) => item.str)
     .filter((part) => !EXCLUDED_TITLE_RE.test(part));
-  const title = titleParts.join(" ").replace(/\s+/g, " ").trim();
+  const title = titleParts.join(" ").replace(/\s+/g, " ").replace(/\s+(?:LG|NG)$/i, "").trim();
 
   return {
     code,
     title: title || code,
-    credits: creditItem?.value ?? 0,
+    credits: /-L$/i.test(code) || grade === "NG"
+      ? 0
+      : (Number.parseInt(code.match(/^[A-Z]{2,5}\s*\d(\d)/i)?.[1] ?? "0", 10) || creditItem?.value || 0),
     grade,
   };
 }
@@ -117,21 +119,20 @@ export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
   for (const line of lines) {
     const header = line.text.match(SEMESTER_RE);
     if (header) {
-      current = {
-        label: header[0],
-        year: Number.parseInt(header[1], 10),
-        term: header[2].toLowerCase() as ParsedSemester["term"],
-        courses: [],
+      const term = header[3].toLowerCase() as ParsedSemester["term"];
+      const year = Number.parseInt(term === "spring" ? header[2] : header[1], 10);
+      current = semesters.find((semester) => semester.year === year && semester.term === term) ?? {
+        label: header[0], year, term, courses: [],
       };
-      semesters.push(current);
+      if (!semesters.includes(current)) semesters.push(current);
       continue;
     }
 
     if (!current) continue;
     const course = parseCourseLine(line);
-    if (!course || course.grade === "NG" || course.grade === "W") continue;
+    if (!course || course.grade === "W") continue;
 
-    const key = `${current.term}-${current.year}-${course.code}-${course.grade}`;
+    const key = `${current.term}-${current.year}-${course.code}`;
     if (seen.has(key)) continue;
     seen.add(key);
     current.courses.push(course);
