@@ -43,7 +43,9 @@ export function NavBar({ active }: { active: string }) {
 
   return (
     <nav
-      className={`sticky top-0 flex h-screen shrink-0 flex-col bg-background py-3 transition-[width] duration-200 ${
+      className={`sticky top-0 flex h-screen shrink-0 flex-col py-3 transition-[width,background-color] duration-300 ease-in-out ${
+        expanded ? "bg-card" : "bg-background"
+      } ${
         expanded ? "w-[184px]" : "w-[60px]"
       }`}
     >
@@ -68,13 +70,25 @@ export function NavBar({ active }: { active: string }) {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setAndPersistExpanded(true)}
-            className="flex w-full items-center justify-center rounded-md px-2 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title="Expand"
-          >
-            <PanelLeftOpen className="h-4 w-4" />
-          </button>
+          <div className="group relative flex h-10 items-center justify-center rounded-md">
+            <Link href="/" className="absolute inset-0 z-0 flex items-center justify-center" title="Jenzabar+ home">
+              <Image
+                src="/assets/brand/favicon.png"
+                alt="Jenzabar+"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
+            </Link>
+            <button
+              onClick={() => setAndPersistExpanded(true)}
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-200 group-hover:bg-accent group-hover:text-foreground group-hover:opacity-100"
+              title="Expand"
+              aria-label="Expand sidebar"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 
