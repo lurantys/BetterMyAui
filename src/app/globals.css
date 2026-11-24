@@ -39,7 +39,8 @@
   --chart-4: #9333ea;
   --chart-5: #c43333;
 
-  --font-sans: -apple-system, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-sans: var(--font-lato), "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display-stack: var(--font-display), "Figtree", sans-serif;
   --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
 }
 
@@ -111,6 +112,16 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.type-display {
+  font-family: var(--font-display-stack);
+  font-variation-settings: "wdth" 116;
+  font-stretch: 116%;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
 }
 
 select,

@@ -65,7 +65,7 @@ function GpaGauge({ gpa, label }: { gpa: number; label: string }) {
         <span className="text-xs font-medium text-muted-foreground">
           {label}
         </span>
-        <span className={`font-mono text-2xl font-bold ${gpaColor(gpa)}`}>
+        <span className={`type-display text-2xl ${gpaColor(gpa)}`}>
           {gpa.toFixed(2)}
         </span>
       </div>
@@ -738,7 +738,7 @@ export default function CareerPage() {
                                           onClick={() => selectCatalogCourse(c)}
                                           className="flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-accent transition-colors first:rounded-t-lg last:rounded-b-lg"
                                         >
-                                          <span className="font-mono text-xs font-medium text-primary shrink-0 mt-0.5">
+                                          <span className="font-sans text-xs font-medium text-primary shrink-0 mt-0.5">
                                             {c.code}
                                           </span>
                                           <div className="min-w-0">
@@ -887,7 +887,7 @@ export default function CareerPage() {
                           style={{ backgroundColor: getCourseColor(course.code) }}
                         />
                         <div className="min-w-0 flex-1">
-                          <span className="font-mono text-sm font-medium text-primary">
+                          <span className="font-sans text-sm font-medium text-primary">
                             {course.code}
                           </span>
                           <span className="ml-2 text-sm text-muted-foreground truncate">
@@ -954,7 +954,7 @@ export default function CareerPage() {
                           Semester GPA
                         </span>
                         <span
-                          className={`ml-2 font-mono text-lg font-bold ${
+                          className={`type-display ml-2 text-lg ${
                             activeScheduleGpa !== null
                               ? gpaColor(activeScheduleGpa)
                               : "text-muted-foreground"
@@ -1056,7 +1056,7 @@ export default function CareerPage() {
                       <span className="text-xs text-muted-foreground">
                         Total Credits
                       </span>
-                      <p className="font-mono text-lg font-semibold">
+                      <p className="type-display text-lg">
                         {totalCredits}
                       </p>
                     </div>
@@ -1064,7 +1064,7 @@ export default function CareerPage() {
                       <span className="text-xs text-muted-foreground">
                         Total Courses
                       </span>
-                      <p className="font-mono text-lg font-semibold">
+                      <p className="type-display text-lg">
                         {totalCourses}
                       </p>
                     </div>
@@ -1269,7 +1269,7 @@ export default function CareerPage() {
                             <tbody>
                               {sem.courses.map((c, cIdx) => (
                                 <tr key={cIdx} className="border-t border-border/50">
-                                  <td className="px-4 py-1.5 font-mono font-medium text-foreground">{c.code}</td>
+                                  <td className="px-4 py-1.5 font-sans font-medium text-foreground">{c.code}</td>
                                   <td className="px-4 py-1.5 text-muted-foreground">{c.title}</td>
                                   <td className="px-4 py-1.5 text-center text-foreground">{c.credits}</td>
                                   <td className="px-4 py-1.5 text-center font-medium text-foreground">{c.grade}</td>

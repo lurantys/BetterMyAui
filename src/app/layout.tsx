@@ -3,6 +3,21 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { InlineScript } from "@/components/inline-script";
 import { LoadingBar } from "@/components/loading-bar";
+import { Lato } from "next/font/google";
+import { Figtree } from "next/font/google";
+
+const lato = Lato({
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "700"],
+  variable: "--font-lato",
+  display: "swap",
+});
+const figtree = Figtree({
+  subsets: ["latin", "latin-ext"],
+  weight: ["800"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Jenzabar+",
@@ -30,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${lato.variable} ${figtree.variable}`} suppressHydrationWarning>
       <head>
         <InlineScript html={themeScript} />
       </head>

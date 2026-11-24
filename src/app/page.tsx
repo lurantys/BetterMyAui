@@ -446,7 +446,7 @@ function CommandCenter({
             <div className="mt-6 border-y border-border/70 py-5">
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                  <p className="font-mono text-sm font-semibold text-primary">
+                  <p className="font-sans text-sm font-semibold text-primary">
                     {nextClass.event.code}
                   </p>
                   <p className="mt-1 text-base font-medium">{nextClass.event.title}</p>
@@ -494,7 +494,7 @@ function CommandCenter({
                 >
                   <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-status-missing" />
                   <p className="leading-5 text-muted-foreground">
-                    <span className="font-mono font-medium text-foreground">
+                    <span className="font-sans font-medium text-foreground">
                       {alert.course}
                     </span>{" "}
                     needs {alert.prerequisite} first.

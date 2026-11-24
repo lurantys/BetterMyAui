@@ -622,7 +622,7 @@ export default function CalendarPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-[13px] font-semibold text-foreground">
+                            <span className="font-sans text-[13px] font-semibold text-foreground">
                               {course.code}
                             </span>
                             <span className="text-[11px] text-muted-foreground">
@@ -686,7 +686,7 @@ export default function CalendarPage() {
                                   className="h-7 w-0.5 shrink-0 rounded-full"
                                   style={{ backgroundColor: getCourseColor(ev.code) }}
                                 />
-                                <span className="font-mono text-[13px] font-semibold text-foreground">
+                                <span className="font-sans text-[13px] font-semibold text-foreground">
                                   {ev.code}
                                 </span>
                                 {unmet && unmet.length > 0 && (

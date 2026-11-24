@@ -223,7 +223,7 @@ export default function CatalogPage() {
                         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/35"
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="font-mono text-sm font-semibold text-foreground">
+                          <span className="font-sans text-sm font-semibold text-foreground">
                             {course.code}
                           </span>
                           <span className="truncate text-sm text-foreground/90">
@@ -265,7 +265,7 @@ export default function CatalogPage() {
                                     tabIndex={0}
                                     aria-label={name ? `${code}: ${name}` : code}
                                   >
-                                    <span className="cursor-help font-mono font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors group-hover:decoration-primary group-focus-within:decoration-primary">
+                                    <span className="cursor-help font-sans font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors group-hover:decoration-primary group-focus-within:decoration-primary">
                                       {code}
                                     </span>
                                     {name && (
