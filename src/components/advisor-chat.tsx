@@ -41,7 +41,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   const proposalContext = useRef<string | null>(null);
   const [minorCandidates, setMinorCandidates] = useState<MinorCandidate[]>([]);
   const [listening, setListening] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recordingRequestedRef = useRef(false);
   const commitTranscriptRef = useRef(false);
@@ -77,8 +77,27 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    bottomRef.current?.scrollIntoView({ behavior: reducedMotion ? "instant" : "smooth" });
+    const scroller = messagesRef.current;
+    scroller?.scrollTo({ top: scroller.scrollHeight, behavior: reducedMotion ? "instant" : "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    const shell = messagesRef.current?.closest<HTMLElement>(".advisor-page-shell");
+    const viewport = window.visualViewport;
+    if (!shell || !viewport) return;
+
+    const updateHeight = () => {
+      shell.style.setProperty("--advisor-viewport-height", `${viewport.height}px`);
+      shell.dataset.keyboardOpen = String(window.innerHeight - viewport.height > 120);
+    };
+    updateHeight();
+    viewport.addEventListener("resize", updateHeight);
+    return () => {
+      viewport.removeEventListener("resize", updateHeight);
+      shell.style.removeProperty("--advisor-viewport-height");
+      delete shell.dataset.keyboardOpen;
+    };
+  }, []);
 
   async function sendMessage(event?: FormEvent, suggested?: string) {
     event?.preventDefault();
@@ -257,7 +276,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   }
 
   return (
-    <div className={compact ? "flex min-h-0 flex-1 flex-col px-4 pb-4" : "mx-auto flex h-screen w-full max-w-4xl flex-col px-5 py-6 md:px-10"}>
+    <div className={compact ? "flex min-h-0 flex-1 flex-col px-4 pb-4" : "mx-auto flex h-full min-w-0 w-full max-w-4xl flex-col px-3 py-4 sm:px-5 sm:py-6 md:px-10"}>
         {!compact && <header className="mb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-primary/10 p-2.5 text-primary"><Bot className="h-5 w-5" /></div>
@@ -266,7 +285,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
         </header>}
 
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="flex-1 space-y-7 overflow-y-auto px-1 py-5 md:px-3">
+          <div ref={messagesRef} className="min-h-0 flex-1 space-y-7 overflow-y-auto overscroll-contain px-1 py-5 md:px-3">
             {minorCandidates.length > 0 && (
               <div className="mx-auto w-full max-w-3xl rounded-2xl bg-accent/45 px-4 py-3">
                 <p className="text-sm font-semibold text-foreground">Possible minor based on completed courses</p>
@@ -293,7 +312,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
             )}
             {messages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={`advisor-chat-enter group flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[88%] text-sm leading-7 ${message.role === "user" ? "whitespace-pre-wrap rounded-[1.6rem] bg-accent px-5 py-3 text-foreground" : "text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_li]:ml-5 [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc"}`}>
+                <div className={`min-w-0 max-w-[94%] break-words text-sm leading-7 sm:max-w-[88%] ${message.role === "user" ? "whitespace-pre-wrap rounded-[1.6rem] bg-accent px-5 py-3 text-foreground" : "text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_li]:ml-5 [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc"}`}>
                   {message.role === "assistant" ? <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{message.content}</ReactMarkdown> : message.content}
                 </div>
               </div>
@@ -332,11 +351,10 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
               </div>
             )}
             {loading && <div className="advisor-chat-enter flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />Thinking…</div>}
-            <div ref={bottomRef} />
           </div>
           {error && <p role="alert" className="px-5 pb-2 text-sm text-destructive">{error}</p>}
-          <form onSubmit={(event) => void sendMessage(event)} className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-[1.8rem] border border-border bg-card px-4 py-3 shadow-lg shadow-black/5 transition focus-within:border-primary/50">
-            <textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !listening) { event.preventDefault(); void sendMessage(); } }} placeholder={listening ? "Listening… select Done when you finish" : "Ask about your courses or semester plan"} rows={1} maxLength={4000} className="max-h-36 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+          <form onSubmit={(event) => void sendMessage(event)} className="mx-auto flex w-full max-w-3xl shrink-0 items-center gap-1 rounded-[1.8rem] border border-border bg-card px-2 py-2 shadow-lg shadow-black/5 transition focus-within:border-primary/50 sm:items-end sm:gap-2 sm:px-4 sm:py-3">
+            <textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !listening) { event.preventDefault(); void sendMessage(); } }} placeholder={listening ? "Listening… select Done when you finish" : "Ask about your courses or semester plan"} rows={1} maxLength={4000} className="max-h-36 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-base sm:text-sm text-foreground outline-none placeholder:text-muted-foreground" />
             <button type="button" onClick={toggleVoiceInput} aria-label={listening ? "Done recording" : "Start voice input"} title={listening ? "Done" : "Speak your message"} className={`mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${listening ? "bg-destructive/10 text-destructive" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>{listening ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-5 w-5" />}</button>
             <Button type="submit" size="icon" aria-label="Send message" disabled={!input.trim() || loading || listening} className="mb-0.5 h-10 w-10 rounded-full motion-safe:transition-transform motion-safe:enabled:hover:-translate-y-0.5 motion-safe:enabled:active:scale-95"><ArrowUp className="h-4 w-4" /></Button>
           </form>

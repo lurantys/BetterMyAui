@@ -561,12 +561,12 @@ export default function CareerPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+    <div className="mobile-app-shell flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <NavBar active="/gpa" />
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-6 py-8 sm:px-8">
+          <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-5 sm:px-8 sm:py-8">
           <div className="mb-8">
             <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground">My Career</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
@@ -575,7 +575,7 @@ export default function CareerPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               {/* Tab filter */}
               <div className="flex items-center gap-2">
                 {(
@@ -891,7 +891,7 @@ export default function CareerPage() {
                     {activeSchedule.courses.map((course) => (
                       <div
                         key={course.id}
-                        className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-accent/30"
+                        className="flex items-center gap-2 px-3 py-3.5 transition-colors hover:bg-accent/30 sm:gap-3 sm:px-5"
                       >
                         <div
                           className="h-2.5 w-2.5 rounded-sm shrink-0"
@@ -901,11 +901,11 @@ export default function CareerPage() {
                           <span className="font-sans text-sm font-medium text-primary">
                             {course.code}
                           </span>
-                          <span className="ml-2 text-sm text-muted-foreground truncate">
+                          <span className="block break-words text-xs text-muted-foreground sm:ml-2 sm:inline sm:text-sm">
                             {course.title}
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="shrink-0 text-xs text-muted-foreground">
                           {course.credits} cr
                         </span>
                         <select
@@ -917,7 +917,7 @@ export default function CareerPage() {
                               e.target.value
                             )
                           }
-                          className="h-8 w-16 rounded border border-input bg-transparent px-1 text-center text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="h-9 w-12 shrink-0 rounded border border-input bg-transparent px-1 text-center text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-8 sm:w-16"
                         >
                           <option value="">—</option>
                           {GRADE_OPTIONS.map((g) => (
@@ -926,7 +926,7 @@ export default function CareerPage() {
                             </option>
                           ))}
                         </select>
-                        <span className="min-w-[50px] text-right font-mono text-sm text-muted-foreground">
+                        <span className="min-w-8 text-right font-mono text-xs text-muted-foreground sm:min-w-[50px] sm:text-sm">
                           {course.gradePoints !== null
                             ? `${course.gradePoints.toFixed(2)}`
                             : "\u2014"}

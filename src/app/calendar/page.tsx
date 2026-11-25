@@ -1,7 +1,6 @@
 "use client";
 
 import { ScheduleTimeFields, formatTime12, getEndTimeForStart, timeToMinutes } from "@/components/schedule-time-fields";
-import { AdvisorChat } from "@/components/advisor-chat";
 
 import {
   startTransition,
@@ -9,6 +8,7 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useSyncExternalStore,
 } from "react";
 import {
   Plus,
@@ -32,6 +32,17 @@ const FullCalendarWrapper = dynamic(
   () => import("@/components/full-calendar-wrapper"),
   { ssr: false }
 );
+const AdvisorChat = dynamic(() => import("@/components/advisor-chat").then((module) => module.AdvisorChat), {
+  ssr: false,
+});
+
+const mobileScheduleQuery = "(width < 64rem)";
+function subscribeToScheduleWidth(callback: () => void) {
+  const media = window.matchMedia(mobileScheduleQuery);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+const isMobileSchedule = () => window.matchMedia(mobileScheduleQuery).matches;
 
 import {
   type CalendarEvent,
@@ -122,6 +133,8 @@ const EMPTY_FORM: EventForm = {
 };
 
 export default function CalendarPage() {
+  const mobile = useSyncExternalStore(subscribeToScheduleWidth, isMobileSchedule, () => false);
+  const [showMobileCourses, setShowMobileCourses] = useState(false);
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [advisorClosing, setAdvisorClosing] = useState(false);
   const advisorButton = useRef<HTMLButtonElement>(null);
@@ -447,7 +460,7 @@ export default function CalendarPage() {
 
   const calendarOptions: CalendarOptions = {
     initialDate,
-    initialView: "timeGridWeek",
+    initialView: mobile ? "timeGridDay" : "timeGridWeek",
     headerToolbar: {
       left: "title",
       center: "prev,next today",
@@ -528,11 +541,11 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="schedule-shell flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+    <div className="mobile-app-shell schedule-shell flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <NavBar active="/calendar" />
 
-        <aside className="flex w-[320px] min-w-[280px] flex-col bg-muted/20">
+        <aside aria-label="Semester courses" className={`order-2 min-h-0 flex-1 flex-col bg-muted/20 lg:order-none lg:flex lg:w-[320px] lg:min-w-[280px] lg:flex-none ${showMobileCourses ? "flex" : "hidden"}`}>
           <div className="px-5 pb-4 pt-5">
             <p className="text-sm font-semibold text-foreground">Add courses</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -713,9 +726,9 @@ export default function CalendarPage() {
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-card">
-          <div className="flex min-h-[58px] items-center gap-4 px-5 py-3">
-            <div className="flex min-w-0 flex-1 items-center gap-4">
+        <main className={`flex min-w-0 flex-col overflow-hidden bg-card ${mobile && showMobileCourses ? "shrink-0" : "flex-1"}`}>
+          <div className="flex min-h-[58px] flex-wrap items-center gap-2 px-3 py-2 lg:flex-nowrap lg:gap-4 lg:px-5 lg:py-3">
+            <div className="flex min-w-0 basis-full items-center gap-2 lg:flex-1 lg:gap-4">
               <h1 className="shrink-0 text-sm font-semibold tracking-[-0.01em] text-foreground">
                 Schedule
               </h1>
@@ -737,7 +750,7 @@ export default function CalendarPage() {
                     </button>
                     <button
                       onClick={() => removeSemester(s.id)}
-                      className="mr-1 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                      className="mr-1 rounded p-1 text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
                       aria-label={`Remove ${termLabel(s.term)} ${s.year}`}
                     >
                       <X className="h-3 w-3" />
@@ -811,6 +824,9 @@ export default function CalendarPage() {
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
+              <Button type="button" size="sm" variant="outline" className="lg:hidden" aria-pressed={showMobileCourses} onClick={() => setShowMobileCourses((shown) => !shown)}>
+                {showMobileCourses ? "Calendar" : "Courses"}
+              </Button>
               <span className="text-xs tabular-nums text-muted-foreground">
                 {totalCredits} credits
               </span>
@@ -826,10 +842,10 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {activeSchedule ? (
-            <div className="min-h-0 flex-1 px-4 pb-4">
+          {mobile && showMobileCourses ? null : activeSchedule ? (
+            <div className="min-h-0 flex-1 px-2 pb-2 lg:px-4 lg:pb-4">
               <div className="calendar-container h-full overflow-hidden rounded-lg bg-background">
-                <FullCalendarWrapper {...calendarOptions} />
+                <FullCalendarWrapper key={mobile ? "day" : "week"} {...calendarOptions} />
               </div>
             </div>
           ) : (
@@ -851,11 +867,11 @@ export default function CalendarPage() {
         aria-controls="schedule-advisor"
         aria-expanded={advisorOpen}
         onClick={() => { setAdvisorClosing(false); setAdvisorOpen(true); }}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg transition hover:bg-primary/90 hover:shadow-xl motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-95"
+        className="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg transition hover:bg-primary/90 hover:shadow-xl motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-95 lg:inline-flex"
       >
         <Bot className="size-4" aria-hidden="true" /> Advisor
       </button>
-      {(advisorOpen || advisorClosing) && (
+      {!mobile && (advisorOpen || advisorClosing) && (
         <aside
           id="schedule-advisor"
           aria-labelledby="schedule-advisor-title"
@@ -894,7 +910,7 @@ export default function CalendarPage() {
             onClick={() => { setShowDetailModal(false); setDetailEventId(null); }}
           >
             <div
-              className="mx-4 w-full max-w-md rounded-lg border border-border/70 bg-card p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
+              className="mx-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border/70 bg-card p-4 sm:mx-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-5 flex items-center justify-between">
@@ -990,7 +1006,7 @@ export default function CalendarPage() {
       {/* Add/Edit Custom Event Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
-          <div className="mx-4 w-full max-w-md rounded-lg border border-border/70 bg-card p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
+          <div className="mx-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border/70 bg-card p-4 sm:mx-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 {editingId ? "Edit Course" : "Add Course"}

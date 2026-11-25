@@ -152,12 +152,12 @@ export default function CatalogPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="mobile-app-shell min-h-dvh bg-background text-foreground">
       <div className="flex min-h-screen">
         <NavBar active="/catalog" />
 
         <main className="min-w-0 flex-1">
-          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-8 sm:px-8">
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-3 py-5 sm:px-8 sm:py-8">
             <header className="mb-7">
               <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground">
                 Course catalog
@@ -181,7 +181,7 @@ export default function CatalogPage() {
                 <select
                   value={selectedDiscipline}
                   onChange={(event) => setSelectedDiscipline(event.target.value)}
-                  className="h-9 appearance-none rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
+                  className="h-10 w-full appearance-none sm:h-9 sm:w-auto rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
                 >
                   <option value="">All disciplines</option>
                   {disciplineCodes.map((code) => (
@@ -196,7 +196,7 @@ export default function CatalogPage() {
                 <select
                   value={selectedLevel}
                   onChange={(event) => setSelectedLevel(event.target.value)}
-                  className="h-9 appearance-none rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
+                  className="h-10 w-full appearance-none sm:h-9 sm:w-auto rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
                 >
                   <option value="">All levels</option>
                   <option value="undergraduate">Undergraduate</option>
@@ -223,10 +223,10 @@ export default function CatalogPage() {
                         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/35"
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="font-sans text-sm font-semibold text-foreground">
+                          <span className="shrink-0 whitespace-nowrap font-sans text-xs font-semibold text-foreground sm:text-sm">
                             {course.code}
                           </span>
-                          <span className="truncate text-sm text-foreground/90">
+                          <span className="min-w-0 break-words text-sm text-foreground/90 sm:truncate">
                             {course.title}
                           </span>
                           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

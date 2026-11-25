@@ -431,6 +431,44 @@ option {
   animation: fade-in 200ms ease-out both;
 }
 
+@media (width < 64rem) {
+  .mobile-app-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-app-shell {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + 1px);
+  }
+
+  .advisor-page-shell {
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--advisor-viewport-height, 100dvh);
+  }
+
+  .advisor-page-shell[data-keyboard-open="true"] {
+    padding-bottom: 0;
+  }
+
+  .advisor-page-shell[data-keyboard-open="true"] .mobile-app-nav {
+    display: none;
+  }
+
+  .calendar-container .fc .fc-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .calendar-container .fc .fc-toolbar-title {
+    font-size: 0.875rem;
+  }
+
+  .calendar-container .fc .fc-button {
+    min-height: 2.25rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .advisor-panel-enter,
   .advisor-panel-exit {

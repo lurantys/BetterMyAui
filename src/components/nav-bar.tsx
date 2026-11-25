@@ -44,8 +44,22 @@ export function NavBar({ active }: { active: string }) {
   };
 
   return (
+    <>
+    <nav aria-label="Mobile navigation" className="mobile-app-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card px-1 lg:hidden">
+      <Link href="/" className="flex min-h-14 flex-col items-center justify-center gap-1 text-[10px] text-muted-foreground">
+        <Image src="/assets/brand/favicon.png" alt="" width={20} height={20} />
+        Home
+      </Link>
+      {navItems.map(({ href, icon: Icon, label }) => (
+        <Link key={href} href={href} aria-current={active === href ? "page" : undefined}
+          className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-medium ${active === href ? "text-primary" : "text-muted-foreground"}`}>
+          <Icon className="size-5" aria-hidden="true" />
+          {label}
+        </Link>
+      ))}
+    </nav>
     <nav
-      className={`sticky top-0 flex h-screen shrink-0 flex-col py-3 transition-[width,background-color] duration-300 ease-in-out ${
+      className={`sticky top-0 hidden h-screen shrink-0 flex-col py-3 transition-[width,background-color] duration-300 ease-in-out lg:flex ${
         expanded ? "bg-card" : "bg-background"
       } ${
         expanded ? "w-[184px]" : "w-[60px]"
@@ -124,5 +138,6 @@ export function NavBar({ active }: { active: string }) {
         <ThemeToggle />
       </div>
     </nav>
+    </>
   );
 }

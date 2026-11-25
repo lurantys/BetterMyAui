@@ -233,7 +233,7 @@ export default function Home() {
 
 function SiteHeader({ hasData }: { hasData: boolean }) {
   return (
-    <header className="flex items-center justify-between px-6 py-5 sm:px-10">
+    <header className="flex flex-wrap items-center justify-between gap-3 px-3 py-4 sm:px-10 sm:py-5">
       <Link href="/" className="flex items-center gap-3">
         <Image
           src="/assets/brand/favicon.png"
