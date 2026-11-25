@@ -86,15 +86,31 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     const viewport = window.visualViewport;
     if (!shell || !viewport) return;
 
+    let restingHeight = viewport.height;
+    let restingWidth = viewport.width;
     const updateHeight = () => {
+      const composing = shell.querySelector("textarea") === document.activeElement;
+      if (!composing || Math.abs(viewport.width - restingWidth) > 20) {
+        restingHeight = viewport.height;
+        restingWidth = viewport.width;
+      }
+      const keyboardOpen = composing && Math.max(restingHeight, window.innerHeight) - viewport.height > 120;
       shell.style.setProperty("--advisor-viewport-height", `${viewport.height}px`);
-      shell.dataset.keyboardOpen = String(window.innerHeight - viewport.height > 120);
+      shell.style.setProperty("--advisor-viewport-top", `${viewport.offsetTop}px`);
+      shell.dataset.keyboardOpen = String(keyboardOpen);
     };
     updateHeight();
     viewport.addEventListener("resize", updateHeight);
+    viewport.addEventListener("scroll", updateHeight);
+    shell.addEventListener("focusin", updateHeight);
+    shell.addEventListener("focusout", updateHeight);
     return () => {
       viewport.removeEventListener("resize", updateHeight);
+      viewport.removeEventListener("scroll", updateHeight);
+      shell.removeEventListener("focusin", updateHeight);
+      shell.removeEventListener("focusout", updateHeight);
       shell.style.removeProperty("--advisor-viewport-height");
+      shell.style.removeProperty("--advisor-viewport-top");
       delete shell.dataset.keyboardOpen;
     };
   }, []);
@@ -276,7 +292,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   }
 
   return (
-    <div className={compact ? "flex min-h-0 flex-1 flex-col px-4 pb-4" : "mx-auto flex h-full min-w-0 w-full max-w-4xl flex-col px-3 py-4 sm:px-5 sm:py-6 md:px-10"}>
+    <div className={compact ? "flex min-h-0 flex-1 flex-col px-4 pb-4" : "mx-auto flex min-h-0 min-w-0 w-full max-w-4xl flex-1 flex-col px-3 py-3 sm:px-5 sm:py-6 md:px-10"}>
         {!compact && <header className="mb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-primary/10 p-2.5 text-primary"><Bot className="h-5 w-5" /></div>
@@ -359,7 +375,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
             <Button type="submit" size="icon" aria-label="Send message" disabled={!input.trim() || loading || listening} className="mb-0.5 h-10 w-10 rounded-full motion-safe:transition-transform motion-safe:enabled:hover:-translate-y-0.5 motion-safe:enabled:active:scale-95"><ArrowUp className="h-4 w-4" /></Button>
           </form>
         </section>
-        <p className="mx-auto mt-3 max-w-3xl text-center text-xs text-muted-foreground">AI suggestions can be incorrect. Confirm degree requirements and registration decisions with your academic advisor.</p>
+        <p className="advisor-chat-disclaimer mx-auto mt-2 max-w-3xl shrink-0 text-center text-xs text-muted-foreground">AI suggestions can be incorrect. Confirm degree requirements and registration decisions with your academic advisor.</p>
     </div>
   );
 }

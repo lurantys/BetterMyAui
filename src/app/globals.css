@@ -442,15 +442,26 @@ option {
 
   .advisor-page-shell {
     position: fixed;
-    inset: 0 0 auto;
+    inset: var(--advisor-viewport-top, 0px) 0 auto;
     height: var(--advisor-viewport-height, 100dvh);
-  }
-
-  .advisor-page-shell[data-keyboard-open="true"] {
+    flex-direction: column;
     padding-bottom: 0;
   }
 
-  .advisor-page-shell[data-keyboard-open="true"] .mobile-app-nav {
+  html:has(.advisor-page-shell),
+  body:has(.advisor-page-shell) {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .advisor-page-shell .mobile-app-nav {
+    position: static;
+    order: 1;
+    flex: none;
+  }
+
+  .advisor-page-shell[data-keyboard-open="true"] :is(.mobile-app-nav, .advisor-chat-disclaimer) {
     display: none;
   }
 
