@@ -405,3 +405,39 @@ option {
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
+
+@keyframes advisor-panel-slide {
+  from { opacity: 0; transform: translate(12px, 8px) scale(0.98); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+
+@keyframes advisor-panel-dismiss {
+  from { opacity: 1; transform: translate(0, 0) scale(1); }
+  to { opacity: 0; transform: translate(12px, 8px) scale(0.98); }
+}
+
+.advisor-panel-enter,
+.advisor-panel-exit {
+  transform-origin: bottom right;
+  animation: advisor-panel-slide 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.advisor-panel-exit {
+  animation-name: advisor-panel-dismiss;
+  animation-duration: 160ms;
+}
+
+.advisor-chat-enter {
+  animation: fade-in 200ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .advisor-panel-enter,
+  .advisor-panel-exit {
+    animation-duration: 1ms;
+  }
+
+  .advisor-chat-enter {
+    animation: none;
+  }
+}

@@ -1,5 +1,8 @@
 "use client";
 
+import { ScheduleTimeFields, formatTime12, getEndTimeForStart, timeToMinutes } from "@/components/schedule-time-fields";
+import { AdvisorChat } from "@/components/advisor-chat";
+
 import {
   startTransition,
   useState,
@@ -16,6 +19,7 @@ import {
   X,
   CalendarDays,
   BookOpen,
+  Bot,
   Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,58 +63,6 @@ const DAY_OPTIONS = [
   { value: 4, label: "Thursday" },
   { value: 5, label: "Friday" },
 ];
-
-const TIME_SLOTS = [
-  "08:00", "08:10", "08:20", "08:30", "08:40", "08:50",
-  "09:00", "09:10", "09:20", "09:30", "09:40", "09:50",
-  "10:00", "10:10", "10:20", "10:30", "10:40", "10:50",
-  "11:00", "11:10", "11:20", "11:30", "11:40", "11:50",
-  "12:00", "12:10", "12:20", "12:30", "12:40", "12:50",
-  "13:00", "13:10", "13:20", "13:30", "13:40", "13:50",
-  "14:00", "14:10", "14:20", "14:30", "14:40", "14:50",
-  "15:00", "15:10", "15:20", "15:30", "15:40", "15:50",
-  "16:00", "16:10", "16:20", "16:30", "16:40", "16:50",
-  "17:00", "17:10", "17:20", "17:30", "17:40", "17:50",
-  "18:00", "18:10", "18:20", "18:30", "18:40", "18:50",
-  "19:00", "19:10", "19:20", "19:30", "19:40", "19:50",
-  "20:00",
-];
-
-function timeToMinutes(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function minutesToTime(mins: number): string {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-}
-
-function getDefaultDuration(days: number[]): number {
-  const hasMWF = days.some((d) => d === 1 || d === 3 || d === 5);
-  const hasTTh = days.some((d) => d === 2 || d === 4);
-  if (hasTTh && !hasMWF) return 80;
-  return 50;
-}
-
-function getEndTimeForStart(start: string, days: number[]): string {
-  const duration = getDefaultDuration(days);
-  const endMins = timeToMinutes(start) + duration;
-  const clamped = Math.min(endMins, timeToMinutes("20:00"));
-  return minutesToTime(clamped);
-}
-
-function formatTime12(t: string | null | undefined): string {
-  if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return "Time not set";
-  const [h, m] = t.split(":").map(Number);
-  if (!Number.isFinite(h) || !Number.isFinite(m) || h > 23 || m > 59) {
-    return "Time not set";
-  }
-  const period = h >= 12 ? "PM" : "AM";
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
-}
 
 function hexToRgba(hex: string, alpha: number): string {
   const value = hex.replace("#", "");
@@ -170,6 +122,19 @@ const EMPTY_FORM: EventForm = {
 };
 
 export default function CalendarPage() {
+  const [advisorOpen, setAdvisorOpen] = useState(false);
+  const [advisorClosing, setAdvisorClosing] = useState(false);
+  const advisorButton = useRef<HTMLButtonElement>(null);
+  const advisorClose = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (advisorOpen) advisorClose.current?.focus();
+  }, [advisorOpen]);
+
+  function closeAdvisor() {
+    setAdvisorClosing(true);
+    setAdvisorOpen(false);
+  }
   const [schedules, setSchedules] = useState<SemesterSchedule[]>([]);
   const [pastSchedules, setPastSchedules] = useState<SemesterSchedule[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -880,6 +845,44 @@ export default function CalendarPage() {
         </main>
       </div>
 
+      <button
+        ref={advisorButton}
+        type="button"
+        aria-controls="schedule-advisor"
+        aria-expanded={advisorOpen}
+        onClick={() => { setAdvisorClosing(false); setAdvisorOpen(true); }}
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg transition hover:bg-primary/90 hover:shadow-xl motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-95"
+      >
+        <Bot className="size-4" aria-hidden="true" /> Advisor
+      </button>
+      {(advisorOpen || advisorClosing) && (
+        <aside
+          id="schedule-advisor"
+          aria-labelledby="schedule-advisor-title"
+          inert={advisorClosing}
+          onAnimationEnd={(event) => {
+            if (event.target === event.currentTarget && advisorClosing) {
+              setAdvisorClosing(false);
+              advisorButton.current?.focus();
+            }
+          }}
+          onKeyDown={(event) => { if (event.key === "Escape") closeAdvisor(); }}
+          className={`fixed bottom-3 right-3 z-40 flex h-[min(42rem,calc(100dvh-1.5rem))] w-[min(29rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-xl ${advisorClosing ? "advisor-panel-exit" : "advisor-panel-enter"}`}
+        >
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
+            <h2 id="schedule-advisor-title" className="text-sm font-semibold">Schedule Advisor</h2>
+            <Button ref={advisorClose} type="button" variant="ghost" size="icon" aria-label="Close Advisor" onClick={closeAdvisor}>
+              <X className="size-4" />
+            </Button>
+          </header>
+          <AdvisorChat
+            compact
+            selectedSemester={activeSchedule ?? undefined}
+            onSchedulesApplied={setSchedules}
+          />
+        </aside>
+      )}
+
       {/* Course Detail Modal */}
       {showDetailModal && detailEventId && activeSchedule && (() => {
         const ev = activeSchedule.courses.find((c) => c.id === detailEventId);
@@ -1085,56 +1088,15 @@ export default function CalendarPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Start time
-                  </label>
-                  <select
-                    value={form.startTime}
-                    onChange={(e) => {
-                      const start = e.target.value;
-                      setForm((prev) => ({
-                        ...prev,
-                        startTime: start,
-                        endTime: getEndTimeForStart(start, prev.daysOfWeek),
-                      }));
-                      setErrors((prev) => ({ ...prev, time: "" }));
-                    }}
-                    className="flex h-9 w-full items-center rounded-md border border-input bg-card px-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {TIME_SLOTS.map((t) => (
-                      <option key={t} value={t}>
-                        {formatTime12(t)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    End time
-                  </label>
-                  <select
-                    value={form.endTime}
-                    onChange={(e) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        endTime: e.target.value,
-                      }));
-                      setErrors((prev) => ({ ...prev, time: "" }));
-                    }}
-                    className="flex h-9 w-full items-center rounded-md border border-input bg-card px-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {TIME_SLOTS.filter(
-                      (t) => timeToMinutes(t) > timeToMinutes(form.startTime)
-                    ).map((t) => (
-                      <option key={t} value={t}>
-                        {formatTime12(t)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              <ScheduleTimeFields
+                start={form.startTime}
+                end={form.endTime}
+                days={form.daysOfWeek}
+                onChange={(startTime, endTime) => {
+                  setForm((prev) => ({ ...prev, startTime, endTime }));
+                  setErrors((prev) => ({ ...prev, time: "" }));
+                }}
+              />
               {errors.time && (
                 <p className="text-[10px] text-destructive">{errors.time}</p>
               )}

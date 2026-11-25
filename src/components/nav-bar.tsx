@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
+  Sparkles,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -16,6 +17,7 @@ const navItems = [
   { href: "/calendar", icon: CalendarDays, label: "Schedule" },
   { href: "/catalog", icon: BookOpen, label: "Catalog" },
   { href: "/gpa", icon: LayoutGrid, label: "My Career" },
+  { href: "/advisor", icon: Sparkles, label: "Advisor" },
 ];
 
 const SIDEBAR_STORAGE_KEY = "jenzabar_plus_sidebar_expanded";
