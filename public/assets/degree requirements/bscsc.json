@@ -1,0 +1,754 @@
+{
+  "program": "BSCSC",
+  "name": "Computer Science",
+  "catalog": "2023-2025",
+  "source": "BSCSC_Course-Sequence_Catalog 2023-2025_Dec_2023 (2).pdf",
+  "totalCredits": 134,
+  "requirements": {
+    "generalEducation": {
+      "label": "General Education (GenEd)",
+      "credits": 30,
+      "courses": [],
+      "groups": {
+        "First Year Experience": {
+          "label": "First Year Experience",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FYE 1101",
+              "title": "First Year Experience",
+              "credits": 1
+            },
+            {
+              "code": "FYE 1102",
+              "title": "First Year Experience",
+              "credits": 1
+            }
+          ],
+          "groups": {}
+        },
+        "Foundations for Academic Success": {
+          "label": "Foundations for Academic Success",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FAS 0210",
+              "title": "Strategic Academic Skills",
+              "credits": 0
+            },
+            {
+              "code": "FAS 1220",
+              "title": "Introduction to Critical Thinking",
+              "credits": 2
+            }
+          ],
+          "groups": {}
+        },
+        "English": {
+          "label": "English",
+          "credits": 6,
+          "courses": [
+            {
+              "code": "ENG 1301",
+              "title": "English Composition I",
+              "credits": 3
+            },
+            {
+              "code": "ENG 2303",
+              "title": "Technical Writing",
+              "credits": 3
+            }
+          ],
+          "groups": {}
+        },
+        "Communication": {
+          "label": "Communication",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "COM 1301",
+              "title": "Public Speaking",
+              "credits": 3
+            }
+          ],
+          "groups": {}
+        },
+        "Arabic": {
+          "label": "Arabic",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "ARA 1201"
+            },
+            {
+              "code": "ARA 1202"
+            },
+            {
+              "code": "ARA 1203"
+            },
+            {
+              "code": "ARA 3299"
+            },
+            {
+              "code": "ARB 1201"
+            },
+            {
+              "code": "ARB 1202"
+            },
+            {
+              "code": "ARB 1203"
+            },
+            {
+              "code": "ARB 1241"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "French": {
+          "label": "French",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FRN 3210"
+            }
+          ],
+          "groups": {},
+          "rule": "French exit level for holders of the Moroccan baccalaureate. See placement notes."
+        },
+        "Humanities": {
+          "label": "Humanities",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "HUM 2305"
+            },
+            {
+              "code": "HUM 2306"
+            },
+            {
+              "code": "HUM 2307"
+            },
+            {
+              "code": "LIT 2301"
+            },
+            {
+              "code": "PHI 2301"
+            },
+            {
+              "code": "PHI 2302"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "History or Political Science": {
+          "label": "History or Political Science",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "HIS 1301"
+            },
+            {
+              "code": "HIS 2301"
+            },
+            {
+              "code": "HUM 1310"
+            },
+            {
+              "code": "HUM 2302"
+            },
+            {
+              "code": "PSC 2301"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Social Sciences": {
+          "label": "Social Sciences",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "ECO 1300"
+            },
+            {
+              "code": "GEO 1301"
+            },
+            {
+              "code": "PSY 1301"
+            },
+            {
+              "code": "SOC 1301"
+            },
+            {
+              "code": "SSC 1310"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Art Appreciation & Creation": {
+          "label": "Art Appreciation & Creation",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "ART 1301",
+              "title": "Music & Vocal Performance"
+            },
+            {
+              "code": "ART 1302",
+              "title": "Dance & Choreography"
+            },
+            {
+              "code": "ART 1303",
+              "title": "Painting & Sculpture"
+            },
+            {
+              "code": "ART 1304",
+              "title": "Drama & Theater"
+            },
+            {
+              "code": "ART 1305",
+              "title": "Art Appreciation"
+            },
+            {
+              "code": "ART 1399",
+              "title": "Special Topics in Arts: …………."
+            },
+            {
+              "code": "ENG 2320",
+              "title": "Creative Writing"
+            },
+            {
+              "code": "HUM 2301",
+              "title": "Islamic Art & Architecture"
+            },
+            {
+              "code": "COM 2327",
+              "title": "Art & Design Production",
+              "details": "Requires COM 2403 as prerequisite or corequisite."
+            },
+            {
+              "code": "LIT 3370",
+              "title": "Aesthetics",
+              "details": "Requires Junior Classification."
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Civic Engagement": {
+          "label": "Civic Engagement",
+          "credits": 1,
+          "courses": [
+            {
+              "code": "SLP 1101"
+            }
+          ],
+          "groups": {},
+          "choose": 1,
+          "options": [
+            "Service-learning course"
+          ]
+        }
+      },
+      "notes": [
+        "Notes",
+        "○ Several of the topics within the GenEd Program (41 SCH) are met by required courses in Areas 1, 2, and 3 of the BS programs in SSE (mathematics, computer science, basic science). The remaining topical",
+        "areas (30 SCH) that satisfy the GenEd are listed in Area 4.",
+        "* FAS 0210 is a non-degree credit-bearing course, and it is a graduation requirement. It counts for 2 non-degree credits, i.e. they do not count towards the degree. However, this course can be waived upon a",
+        "successful test-out.",
+        "** ECO 1300: requires no Course Prerequisites/ Co-Requisites (Catalog 2017-2019 p. 205). This course is designed only for students that are NOT majoring or minoring in Business Administration or Human",
+        "Resource development. Therefore, it cannot serve as a substitute for ECO 2301 or ECO 2302. However, students that are eligible to take this course may also take it as an elective course (Catalog 2017-2019 p.",
+        "120).",
+        "*** Art Appreciation & Creation:",
+        "(1) All degree-seeking students must earn 2 SCH of Arabic language by taking one course from the list. Arabic courses are categorized depending on the student’s high school diploma and prior Arabic",
+        "proficiency level.",
+        "Holders of the Moroccan baccalaureate take ARB 1241 without placement.",
+        "Holders of a cultural mission baccalaureate in Morocco (French, Spanish, etc.) take one ARB course based on placement test results.",
+        "Holders of international high school degrees with no prior Arabic language instruction take one ARA course based on placement test results.",
+        "(2) Holders of the Moroccan baccalaureate must earn 2 SCH of French language by taking FRN 3210 as an exit level. Every newly admitted student is required to take a free international official French",
+        "placement test TEF (Test d’Evaluation de Français) in order to determine how many courses in French he/she needs to take and at what level. If based on TEF placement test results students have to take",
+        "additional French courses as prerequisites, the latter will not count towards the degree. Students may not take French in their first semester of study, and they can also be exempted upon earning a minimum",
+        "of C1 in TEF and 16 in GAT. International students with no prior knowledge of French may choose to take Spanish to satisfy GenEd language requirements.",
+        "(3) A course with an SL component must be taken as co-requisites. Failing the course will de facto result in failing the SL component, too. Failing the SL component will result inan NRP in the SL component only.",
+        "Students who fail the SL component must enroll in another course from their degree plan with an SL component in the subsequent semesters.",
+        "(4) In case no subsequent course in the student’s degree plan is offered with an SL (Service Learning) component, he/she must submit an SL proposal to the SLP Committee and enroll in SLP 1101.",
+        "**** EGR 4300 may be combined with EGR 4402 for 7 SCH with approval (Catalog 2017-2019, page 214)."
+      ]
+    },
+    "commonCore": {
+      "label": "Mathematics, Sciences and Engineering",
+      "credits": 30,
+      "courses": [
+        {
+          "code": "MTH 1303",
+          "title": "Calculus I: Differential and Integral Calculus",
+          "credits": 3
+        },
+        {
+          "code": "MTH 2301",
+          "title": "Calculus II: Multivariable Calculus",
+          "credits": 3
+        },
+        {
+          "code": "MTH 2320",
+          "title": "Linear Algebra",
+          "credits": 3
+        },
+        {
+          "code": "MTH 3301",
+          "title": "Probability and Statistics for Engineers",
+          "credits": 3
+        },
+        {
+          "code": "MTH 1304",
+          "title": "Discrete Mathematics",
+          "credits": 3
+        },
+        {
+          "code": "PHY 1401",
+          "title": "Physics I",
+          "credits": 4
+        },
+        {
+          "code": "PHY 1402",
+          "title": "Physics II",
+          "credits": 4
+        },
+        {
+          "code": "EGR 2302",
+          "title": "Engineering Economics",
+          "credits": 3
+        }
+      ],
+      "groups": {
+        "Basic Sciences Elective": {
+          "label": "Basic Sciences Elective",
+          "credits": 4,
+          "courses": [
+            {
+              "code": "BIO 1401"
+            },
+            {
+              "code": "BIO 1402"
+            },
+            {
+              "code": "CHE 1401"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        }
+      }
+    },
+    "majorCore": {
+      "label": "Computer Science Core",
+      "credits": 41,
+      "courses": [
+        {
+          "code": "CSC 1401",
+          "title": "Computer Programming",
+          "credits": 4
+        },
+        {
+          "code": "CSC 2302",
+          "title": "Data Structures",
+          "credits": 3
+        },
+        {
+          "code": "CSC 2306",
+          "title": "Object Oriented Programming",
+          "credits": 3
+        },
+        {
+          "code": "CSC 2305",
+          "title": "Computer Organization and Architecture",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3315",
+          "title": "Languages and Compilers",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3323",
+          "title": "Analysis of Algorithms",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3324",
+          "title": "Software Engineering",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3326",
+          "title": "Database Systems",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3351",
+          "title": "Operating Systems",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3371",
+          "title": "Computer Communications and Networks",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3374",
+          "title": "Advanced and Distributed Programming Paradigms",
+          "credits": 3
+        },
+        {
+          "code": "EGR 4300",
+          "title": "Internship",
+          "credits": 3
+        },
+        {
+          "code": "EGR 4402",
+          "title": "Capstone Design",
+          "credits": 4
+        }
+      ],
+      "groups": {}
+    },
+    "majorElectives": {
+      "label": "Computing Elective",
+      "credits": 3,
+      "courses": [
+        {
+          "code": "CSC 33XX"
+        },
+        {
+          "code": "CSC 43XX"
+        }
+      ],
+      "groups": {},
+      "choose": 1,
+      "rule": "Computing course at the 3000 or 4000 level."
+    },
+    "concentrations": {
+      "label": "Computer Science Specialization",
+      "credits": 9,
+      "courses": [],
+      "groups": {
+        "Advanced Computer Science": {
+          "label": "Advanced Computer Science",
+          "credits": 9,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "CSC 3309",
+                  "title": "Introduction to Artificial Intelligence",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 2306, CSC 3323, MTH 3301"
+                },
+                {
+                  "code": "CSC 4308",
+                  "title": "Cyber Security",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3371 and Junior classification"
+                }
+              ],
+              "groups": {}
+            },
+            "Electives": {
+              "label": "Electives",
+              "credits": 3,
+              "courses": [
+                {
+                  "code": "CSC 3328",
+                  "title": "Embedded Systems",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3351"
+                },
+                {
+                  "code": "CSC 4399",
+                  "title": "Special Topics in Computer Science",
+                  "credits": 3,
+                  "details": "Prerequisites: Depends on the topic"
+                }
+              ],
+              "groups": {},
+              "choose": 1
+            }
+          }
+        },
+        "Artificial Intelligence": {
+          "label": "Artificial Intelligence",
+          "credits": 9,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "CSC 3309",
+                  "title": "Introduction to Artificial Intelligence",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 2306, CSC 3323, MTH 3301"
+                },
+                {
+                  "code": "CSC 3347",
+                  "title": "Machine Learning and Data Mining",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3308 or CSC 3309"
+                }
+              ],
+              "groups": {}
+            },
+            "Electives": {
+              "label": "Electives",
+              "credits": 3,
+              "courses": [
+                {
+                  "code": "CSC 3310",
+                  "title": "Artificial Neural Networks",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3308 or CSC 3309"
+                },
+                {
+                  "code": "CSC 3311",
+                  "title": "Computer Vision",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3308 or CSC 3309"
+                },
+                {
+                  "code": "CSC 3348",
+                  "title": "Natural Language Processing and Text Mining",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3308 or CSC 3309"
+                },
+                {
+                  "code": "CSC 4351",
+                  "title": "Statistical Analysis",
+                  "credits": 3,
+                  "details": "Prerequisites: MTH 3301"
+                }
+              ],
+              "groups": {},
+              "choose": 1
+            }
+          }
+        },
+        "Big Data Analytics": {
+          "label": "Big Data Analytics",
+          "credits": 9,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "CSC 3331",
+                  "title": "Introduction to Big Data Environment and Applications",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3326"
+                },
+                {
+                  "code": "CSC 4352",
+                  "title": "Big Data Analytics",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3331"
+                }
+              ],
+              "groups": {}
+            },
+            "Electives": {
+              "label": "Electives",
+              "credits": 3,
+              "courses": [
+                {
+                  "code": "CSC 3329",
+                  "title": "IoT & Big Data Streaming",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3371"
+                },
+                {
+                  "code": "CSC 3346",
+                  "title": "Data Engineering and Visualization",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3326"
+                },
+                {
+                  "code": "CSC 3349",
+                  "title": "Data Warehousing",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3326"
+                }
+              ],
+              "groups": {},
+              "choose": 1
+            }
+          }
+        },
+        "Computer Systems": {
+          "label": "Computer Systems",
+          "credits": 9,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "CSC 3373",
+                  "title": "Cloud Computing",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3351 and CSC 3371"
+                },
+                {
+                  "code": "CSC 3328",
+                  "title": "Embedded Systems",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3351"
+                }
+              ],
+              "groups": {}
+            },
+            "Electives": {
+              "label": "Electives",
+              "credits": 3,
+              "courses": [
+                {
+                  "code": "CSC 3329",
+                  "title": "IoT & Big Data Streaming",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3371"
+                },
+                {
+                  "code": "CSC 3331",
+                  "title": "Introduction to Big Data Environment and Applications",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3326"
+                },
+                {
+                  "code": "CSC 3376",
+                  "title": "Systems Programming",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3351"
+                }
+              ],
+              "groups": {},
+              "choose": 1
+            }
+          }
+        },
+        "Software Engineering": {
+          "label": "Software Engineering",
+          "credits": 9,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "CSC 4307",
+                  "title": "Agile Software Engineering and DevOps",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3326, CSC 3351 and Junior classification"
+                },
+                {
+                  "code": "CSC 4309",
+                  "title": "Enterprise Cloud and Mobile Applications",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3374"
+                }
+              ],
+              "groups": {}
+            },
+            "Electives": {
+              "label": "Electives",
+              "credits": 3,
+              "courses": [
+                {
+                  "code": "CSC 3357",
+                  "title": "Object-oriented Design",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 2306 and Junior classification"
+                },
+                {
+                  "code": "CSC 3358",
+                  "title": "Blockchain Business Application",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3326"
+                },
+                {
+                  "code": "CSC 3359",
+                  "title": "Software Testing",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 2306 and Junior classification"
+                },
+                {
+                  "code": "CSC 4306",
+                  "title": "Software Project Management",
+                  "credits": 3,
+                  "details": "Prerequisites: CSC 3324 and Junior classification"
+                }
+              ],
+              "groups": {},
+              "choose": 1
+            }
+          }
+        }
+      },
+      "choose": 1,
+      "notes": [
+        "CSC 3308 is the new code for CSC 2309.",
+        "CSC 3309 is the original and resumed code for CSC 4301."
+      ]
+    },
+    "minors": {
+      "label": "Minor",
+      "credits": 15,
+      "courses": [
+        {
+          "requirement": "Minor Course 1",
+          "credits": 3
+        },
+        {
+          "requirement": "Minor Course 2",
+          "credits": 3
+        },
+        {
+          "requirement": "Minor Course 3",
+          "credits": 3
+        },
+        {
+          "requirement": "Minor Course 4",
+          "credits": 3
+        },
+        {
+          "requirement": "Minor Course 5",
+          "credits": 3
+        }
+      ],
+      "groups": {}
+    },
+    "freeElectives": {
+      "label": "Free Electives",
+      "credits": 6,
+      "courses": [
+        {
+          "requirement": "Free Elective 1",
+          "credits": 3
+        },
+        {
+          "requirement": "Free Elective 2",
+          "credits": 3
+        }
+      ],
+      "groups": {}
+    }
+  }
+}
