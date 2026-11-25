@@ -1,6 +1,7 @@
 "use client";
 
 import { ScheduleTimeFields, formatTime12, getEndTimeForStart, timeToMinutes } from "@/components/schedule-time-fields";
+import { CourseAutocompleteInput } from "@/components/course-autocomplete-input";
 
 import {
   startTransition,
@@ -157,6 +158,17 @@ export default function CalendarPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function chooseFormCourse(course: CatalogCourse) {
+    setForm((previous) => ({
+      ...previous,
+      code: course.code,
+      title: course.title,
+      credits: String(course.credits),
+      prerequisite_courses: course.prerequisite_courses,
+    }));
+    setErrors((previous) => ({ ...previous, code: "", title: "" }));
+  }
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
@@ -1025,14 +1037,16 @@ export default function CalendarPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  <label htmlFor="schedule-course-code" className="mb-1 block text-xs font-medium text-muted-foreground">
                     Course code <span className="text-destructive">*</span>
                   </label>
-                  <Input
+                  <CourseAutocompleteInput
+                    id="schedule-course-code"
                     placeholder="e.g. CSC 2302"
                     value={form.code}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, code: e.target.value }));
+                    onSelect={chooseFormCourse}
+                    onChange={(code) => {
+                      setForm((prev) => ({ ...prev, code, prerequisite_courses: [] }));
                       setErrors((prev) => ({ ...prev, code: "" }));
                     }}
                   />
@@ -1059,14 +1073,16 @@ export default function CalendarPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label htmlFor="schedule-course-title" className="mb-1 block text-xs font-medium text-muted-foreground">
                   Title <span className="text-destructive">*</span>
                 </label>
-                <Input
+                <CourseAutocompleteInput
+                  id="schedule-course-title"
                   placeholder="e.g. Data Structures"
                   value={form.title}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, title: e.target.value }));
+                  onSelect={chooseFormCourse}
+                  onChange={(title) => {
+                    setForm((prev) => ({ ...prev, title }));
                     setErrors((prev) => ({ ...prev, title: "" }));
                   }}
                 />

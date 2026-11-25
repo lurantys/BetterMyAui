@@ -3,7 +3,7 @@ import catalogData from "../../../../data/catalog/aui_catalog_data.json";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.toLowerCase() ?? "";
+  const q = searchParams.get("q")?.trim().toLowerCase() ?? "";
   const discipline = searchParams.get("discipline") ?? "";
   const level = searchParams.get("level") ?? "";
   const limitParam = searchParams.get("limit");
@@ -35,11 +35,17 @@ export async function GET(request: Request) {
   let courses = catalog.courses;
 
   if (q) {
+    const compactQuery = q.replace(/\s+/g, "");
+    const compactCode = (code: string) => code.toLowerCase().replace(/\s+/g, "");
+    const rank = (course: (typeof courses)[number]) =>
+      compactCode(course.code) === compactQuery ? 3
+        : compactCode(course.code).startsWith(compactQuery) ? 2
+        : course.title.toLowerCase().startsWith(q) ? 1 : 0;
     courses = courses.filter(
       (c) =>
-        c.code.toLowerCase().includes(q) ||
+        compactCode(c.code).includes(compactQuery) ||
         c.title.toLowerCase().includes(q)
-    );
+    ).sort((a, b) => rank(b) - rank(a));
   }
 
   if (discipline) {
