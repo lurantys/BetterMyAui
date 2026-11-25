@@ -10,8 +10,8 @@ import {
 import {
   ArrowRight,
   BookOpen,
+  Bot,
   CalendarDays,
-  CheckCircle2,
   CircleAlert,
   Clock3,
   GraduationCap,
@@ -202,7 +202,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <SiteHeader hasData={hasData} />
+      <SiteHeader />
 
       <main className="flex min-h-0 flex-1 flex-col px-6 py-6 sm:px-10 sm:py-8">
         {!hydrated ? (
@@ -231,7 +231,7 @@ export default function Home() {
   );
 }
 
-function SiteHeader({ hasData }: { hasData: boolean }) {
+function SiteHeader() {
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 px-3 py-4 sm:px-10 sm:py-5">
       <Link href="/" className="flex items-center gap-3">
@@ -244,15 +244,7 @@ function SiteHeader({ hasData }: { hasData: boolean }) {
         />
         <span className="text-sm font-semibold tracking-[-0.01em]">Jenzabar+</span>
       </Link>
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-        <Link
-          href="/calendar"
-          className="rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          {hasData ? "Open schedule" : "Get started"}
-        </Link>
-      </div>
+      <ThemeToggle />
     </header>
   );
 }
@@ -357,26 +349,27 @@ function CommandCenter({
   alerts: Array<{ course: string; prerequisite: string }>;
 }) {
   return (
-    <div className="mx-auto max-w-6xl">
-      <section className="flex flex-col justify-between gap-8 border-b border-border/70 pb-10 sm:flex-row sm:items-end">
+    <div className="mx-auto my-auto w-full max-w-5xl">
+      <section className="flex flex-col items-center gap-6 border-b border-border/70 pb-8 text-center sm:pb-10">
         <div>
           <h1 className="text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
             Welcome back, {firstName}.
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Here’s what’s coming up in your semester.
+          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+            {activeSchedule ? formatSemester(activeSchedule) : "Choose a semester to start planning."}
           </p>
         </div>
-        <Link
-          href="/calendar"
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Open schedule
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link href="/calendar" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+            Open Schedule <ArrowRight className="size-4" />
+          </Link>
+          <Link href="/advisor" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-accent">
+            <Bot className="size-4" /> Ask Advisor
+          </Link>
+        </div>
       </section>
 
-      <section className="grid divide-y divide-border/70 border-b border-border/70 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+      <section className="grid divide-y divide-border/70 border-b border-border/70 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <SummaryItem
           icon={<CalendarDays className="h-4 w-4" />}
           label="Current semester"
@@ -400,122 +393,30 @@ function CommandCenter({
           href="/gpa"
         />
         <SummaryItem
-          icon={<Clock3 className="h-4 w-4" />}
-          label="Next class"
-          value={nextClass ? nextClass.event.code : "Nothing scheduled"}
-          detail={
-            nextClass
-              ? `${nextClass.dayLabel} · ${nextClass.event.startTime}`
-              : "Your week is open"
-          }
+          icon={<BookOpen className="size-4" />}
+          label="Semester credits"
+          value={activeSchedule ? formatCredits(activeCredits) : "—"}
+          detail={activeSchedule ? activeSchedule.courses.length + " courses" : "Add courses in Schedule"}
           href="/calendar"
         />
-        <SummaryItem
-          icon={<CircleAlert className="h-4 w-4" />}
-          label="Prerequisite alerts"
-          value={alerts.length > 0 ? String(alerts.length) : "All clear"}
-          detail={
-            alerts.length > 0
-              ? "Review before you plan"
-              : "No blockers in your current plan"
-          }
-          href="/catalog"
-          alert={alerts.length > 0}
-        />
       </section>
 
-      <section className="grid gap-12 py-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20 lg:py-16">
-        <div>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Your next move
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em]">
-                {nextClass ? "Next class" : "Your schedule"}
-              </h2>
-            </div>
-            <Link
-              href="/calendar"
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              View schedule
+      {(nextClass || alerts.length > 0) && (
+        <div className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm">
+          {nextClass && (
+            <Link href="/calendar" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <Clock3 className="size-4 text-primary" />
+              Next class: {nextClass.event.code} on {nextClass.dayLabel} at {nextClass.event.startTime}
             </Link>
-          </div>
-          {nextClass ? (
-            <div className="mt-6 border-y border-border/70 py-5">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                <div>
-                  <p className="font-sans text-sm font-semibold text-primary">
-                    {nextClass.event.code}
-                  </p>
-                  <p className="mt-1 text-base font-medium">{nextClass.event.title}</p>
-                </div>
-                <div className="text-sm text-muted-foreground sm:text-right">
-                  <p>{nextClass.dayLabel}</p>
-                  <p className="mt-1">
-                    {nextClass.event.startTime}–{nextClass.event.endTime}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-6 border-y border-border/70 py-8 text-sm leading-6 text-muted-foreground">
-              {activeSchedule
-                ? "Your current semester is ready for courses. Add one when you are ready."
-                : "Create a semester to turn your plans into a weekly schedule."}
-            </div>
+          )}
+          {alerts.length > 0 && (
+            <Link href="/calendar" className="inline-flex items-center gap-2 text-status-missing hover:underline">
+              <CircleAlert className="size-4" />
+              {alerts.length} prerequisite {alerts.length === 1 ? "alert" : "alerts"}
+            </Link>
           )}
         </div>
-
-        <div>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Attention
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em]">
-                Prerequisite check
-              </h2>
-            </div>
-            <Link
-              href="/catalog"
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              Open catalog
-            </Link>
-          </div>
-          {alerts.length > 0 ? (
-            <div className="mt-6 divide-y divide-border/70 border-y border-border/70">
-              {alerts.slice(0, 3).map((alert) => (
-                <div
-                  key={`${alert.course}-${alert.prerequisite}`}
-                  className="flex items-start gap-3 py-4 text-sm"
-                >
-                  <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-status-missing" />
-                  <p className="leading-5 text-muted-foreground">
-                    <span className="font-sans font-medium text-foreground">
-                      {alert.course}
-                    </span>{" "}
-                    needs {alert.prerequisite} first.
-                  </p>
-                </div>
-              ))}
-              {alerts.length > 3 && (
-                <p className="py-4 text-xs text-muted-foreground">
-                  + {alerts.length - 3} more prerequisite checks
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="mt-6 flex items-start gap-3 border-y border-border/70 py-5 text-sm leading-6 text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-status-met" />
-              Your current plan has no unresolved prerequisite alerts.
-            </div>
-          )}
-        </div>
-      </section>
-
+      )}
     </div>
   );
 }
@@ -526,14 +427,12 @@ function SummaryItem({
   value,
   detail,
   href,
-  alert = false,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   detail: string;
   href: string;
-  alert?: boolean;
 }) {
   return (
     <Link
@@ -541,7 +440,7 @@ function SummaryItem({
       className="group px-1 py-6 transition-colors hover:bg-accent/25 sm:px-6 lg:px-5"
     >
       <div className="flex items-center gap-2 text-muted-foreground">
-        <span className={alert ? "text-status-missing" : "text-primary"}>{icon}</span>
+        <span className="text-primary">{icon}</span>
         <span className="text-xs font-medium uppercase tracking-[0.12em]">
           {label}
         </span>
