@@ -3,7 +3,7 @@
 import { ScheduleTimeFields } from "@/components/schedule-time-fields";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowUp, Bot, Check, LoaderCircle, Mic, Square, Sparkles, X } from "lucide-react";
+import { ArrowUp, Bot, Check, LoaderCircle, Mic, Square, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -281,7 +281,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
             )}
             {messages.length === 0 && (
                 <div className="mx-auto flex max-w-xl flex-col items-center py-16 text-center">
-                <Sparkles className="mb-5 h-8 w-8 text-primary" />
+                <Bot className="mb-5 h-8 w-8 text-primary" />
                 <h2 className="text-2xl font-semibold text-foreground">What would you like to plan?</h2>
                 <p className="mt-3 text-sm text-muted-foreground">Ask about courses, prerequisites, your major, or changes to your semesters.</p>
                 <div className="mt-7 flex flex-wrap justify-center gap-2">
