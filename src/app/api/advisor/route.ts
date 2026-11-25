@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
-import { readFileSync } from "fs";
-import { join } from "path";
+import catalogData from "../../../../data/catalog/aui_catalog_data.json";
+
+import bacs from "../../../../public/assets/degree requirements/bacs.json";
+import bais from "../../../../public/assets/degree requirements/bais.json";
+import bba from "../../../../public/assets/degree requirements/bba.json";
+import bscsc from "../../../../public/assets/degree requirements/bscsc.json";
+import bsems from "../../../../public/assets/degree requirements/bsems.json";
+import bsge from "../../../../public/assets/degree requirements/bsge.json";
+import bsrese from "../../../../public/assets/degree requirements/bsrese.json";
 
 export const runtime = "nodejs";
 
@@ -23,24 +30,12 @@ interface DegreeRequirementNode {
   requirements: Record<string, unknown>;
 }
 interface ProposedChange { action: "add" | "remove" | "update_meeting" | "set_grade" | "set_major" | "set_minor"; term?: "fall" | "spring" | "summer"; year?: number; code?: string; grade?: string; value?: string; daysOfWeek?: number[]; startTime?: string; endTime?: string; location?: string; meetingLine?: number }
-let catalogCache: Catalog | null = null;
-let degreeCache: DegreeRequirementNode[] | null = null;
-
 function getCatalog(): Catalog {
-  if (!catalogCache) {
-    catalogCache = JSON.parse(readFileSync(join(process.cwd(), "data", "catalog", "aui_catalog_data.json"), "utf8")) as Catalog;
-  }
-  return catalogCache;
+  return catalogData;
 }
 
-const DEGREE_FILES = ["bacs.json", "bais.json", "bba.json", "bscsc.json", "bsems.json", "bsge.json", "bsrese.json"];
-
 function getDegreePrograms(): DegreeRequirementNode[] {
-  if (!degreeCache) {
-    const directory = join(process.cwd(), "public", "assets", "degree requirements");
-    degreeCache = DEGREE_FILES.map((file) => JSON.parse(readFileSync(join(directory, file), "utf8")) as DegreeRequirementNode);
-  }
-  return degreeCache;
+  return [bacs, bais, bba, bscsc, bsems, bsge, bsrese];
 }
 
 function normalizeText(value: string): string {

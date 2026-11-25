@@ -2,7 +2,7 @@
 
 import { ScheduleTimeFields } from "@/components/schedule-time-fields";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ArrowUp, Bot, Check, LoaderCircle, Mic, Square, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -34,6 +34,54 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [cursor, setCursor] = useState(0);
+  const [composerFocused, setComposerFocused] = useState(false);
+  const [dismissedQuery, setDismissedQuery] = useState("");
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const [courseMatches, setCourseMatches] = useState<{
+    query: string;
+    items: { code: string; title: string; matchedLength: number }[];
+  }>({ query: "", items: [] });
+  const suggestionId = useId();
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const autocompleteQuery = input.slice(0, cursor).split("\n").at(-1)?.trimEnd() ?? "";
+  const suggestions = composerFocused && autocompleteQuery !== dismissedQuery && courseMatches.query === autocompleteQuery
+    ? courseMatches.items : [];
+
+  useEffect(() => {
+    if (!composerFocused || autocompleteQuery.length < 3 || autocompleteQuery === dismissedQuery) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/courses?autocomplete=${encodeURIComponent(autocompleteQuery.slice(-160))}`, { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!controller.signal.aborted && Array.isArray(data.suggestions)) {
+          setCourseMatches({ query: autocompleteQuery, items: data.suggestions });
+          setActiveSuggestion(-1);
+        }
+      } catch {
+        // Chat remains usable when catalog suggestions are unavailable.
+      }
+    }, 180);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [autocompleteQuery, composerFocused, dismissedQuery]);
+
+  function insertCourse(suggestion: (typeof suggestions)[number]) {
+    const end = input.slice(0, cursor).trimEnd().length;
+    const start = Math.max(0, end - suggestion.matchedLength);
+    const replacement = `${suggestion.code} — ${suggestion.title}`;
+    const next = input.slice(0, start) + replacement + input.slice(end);
+    if (next.length > 4000) return;
+    const nextCursor = start + replacement.length;
+    setInput(next);
+    setCursor(nextCursor);
+    setDismissedQuery(next.slice(0, nextCursor).split("\n").at(-1)?.trimEnd() ?? "");
+    requestAnimationFrame(() => {
+      composerRef.current?.focus();
+      composerRef.current?.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [proposal, setProposal] = useState<ProposedChange[] | null>(null);
@@ -369,8 +417,60 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
             {loading && <div className="advisor-chat-enter flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />Thinking…</div>}
           </div>
           {error && <p role="alert" className="px-5 pb-2 text-sm text-destructive">{error}</p>}
-          <form onSubmit={(event) => void sendMessage(event)} className="mx-auto flex w-full max-w-3xl shrink-0 items-center gap-1 rounded-[1.8rem] border border-border bg-card px-2 py-2 shadow-lg shadow-black/5 transition focus-within:border-primary/50 sm:items-end sm:gap-2 sm:px-4 sm:py-3">
-            <textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !listening) { event.preventDefault(); void sendMessage(); } }} placeholder={listening ? "Listening… select Done when you finish" : "Ask about your courses or semester plan"} rows={1} maxLength={4000} className="max-h-36 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-base sm:text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+          <form onSubmit={(event) => void sendMessage(event)} className="relative mx-auto flex w-full max-w-3xl shrink-0 items-center gap-1 rounded-[1.8rem] border border-border bg-card px-2 py-2 shadow-lg shadow-black/5 transition focus-within:border-primary/50 sm:items-end sm:gap-2 sm:px-4 sm:py-3">
+            {suggestions.length > 0 && !listening && (
+              <div id={suggestionId} role="listbox" aria-label="Course suggestions" className="absolute inset-x-0 bottom-full z-10 mb-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-lg">
+                {suggestions.map((course, index) => (
+                  <button key={course.code} id={`${suggestionId}-${index}`} type="button" role="option"
+                    tabIndex={-1} aria-selected={index === activeSuggestion}
+                    onMouseDown={(event) => event.preventDefault()} onClick={() => insertCourse(course)}
+                    className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent ${index === activeSuggestion ? "bg-accent" : ""}`}>
+                    <span className="shrink-0 font-medium text-primary">{course.code}</span>
+                    <span className="truncate">{course.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <textarea ref={composerRef} value={input}
+              aria-label="Message Advisor" aria-autocomplete="list"
+              aria-controls={suggestions.length && !listening ? suggestionId : undefined}
+              aria-activedescendant={suggestions[activeSuggestion] && !listening ? `${suggestionId}-${activeSuggestion}` : undefined}
+              onFocus={() => setComposerFocused(true)} onBlur={() => setComposerFocused(false)}
+              onChange={(event) => {
+                setInput(event.target.value);
+                setCursor(event.target.selectionStart);
+                setDismissedQuery("");
+                setActiveSuggestion(-1);
+              }}
+              onSelect={(event) => setCursor(event.currentTarget.selectionStart)}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing || listening) return;
+                if (suggestions.length) {
+                  if (event.key === "Escape") {
+                    event.stopPropagation();
+                    setDismissedQuery(autocompleteQuery);
+                    return;
+                  }
+                  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+                    const step = event.key === "ArrowDown" ? 1 : -1;
+                    setActiveSuggestion((previous) => previous < 0 ? (step > 0 ? 0 : suggestions.length - 1)
+                      : (previous + step + suggestions.length) % suggestions.length);
+                    return;
+                  }
+                  if (event.key === "Enter" && !event.shiftKey && suggestions[activeSuggestion]) {
+                    event.preventDefault();
+                    insertCourse(suggestions[activeSuggestion]);
+                    return;
+                  }
+                }
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendMessage();
+                }
+              }}
+              placeholder={listening ? "Listening… select Done when you finish" : "Ask about your courses or semester plan"}
+              rows={1} maxLength={4000} className="max-h-36 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-base sm:text-sm text-foreground outline-none placeholder:text-muted-foreground" />
             <button type="button" onClick={toggleVoiceInput} aria-label={listening ? "Done recording" : "Start voice input"} title={listening ? "Done" : "Speak your message"} className={`mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${listening ? "bg-destructive/10 text-destructive" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>{listening ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-5 w-5" />}</button>
             <Button type="submit" size="icon" aria-label="Send message" disabled={!input.trim() || loading || listening} className="mb-0.5 h-10 w-10 rounded-full motion-safe:transition-transform motion-safe:enabled:hover:-translate-y-0.5 motion-safe:enabled:active:scale-95"><ArrowUp className="h-4 w-4" /></Button>
           </form>

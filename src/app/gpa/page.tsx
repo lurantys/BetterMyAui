@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NavBar } from "@/components/nav-bar";
+import { ProgramSelect } from "@/components/program-select";
 import type { ParsedSemester } from "@/lib/transcript-parser";
 import {
   type CalendarEvent,
@@ -126,33 +127,16 @@ export default function CareerPage() {
   const importTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [editMajor, setEditMajor] = useState(false);
-  const [editMinor, setEditMinor] = useState(false);
-  const [majorValue, setMajorValue] = useState("");
-  const [minorValue, setMinorValue] = useState("");
-
-  const saveMajor = useCallback(() => {
-    const nextProfile = {
-      fullName: profile?.fullName ?? "Student",
-      major: majorValue.trim() || null,
-      minor: profile?.minor ?? null,
-    };
-    setProfile(nextProfile);
-    saveProfile(nextProfile);
-    setEditMajor(false);
-  }, [majorValue, profile]);
-
-  const saveMinor = useCallback(() => {
-    const nextProfile = {
+  function saveProgram(kind: "major" | "minor", value: string) {
+    const nextProfile: StudentProfile = {
       fullName: profile?.fullName ?? "Student",
       major: profile?.major ?? null,
-      minor: minorValue.trim() || null,
+      minor: profile?.minor ?? null,
+      [kind]: value || null,
     };
     setProfile(nextProfile);
     saveProfile(nextProfile);
-    setEditMinor(false);
-  }, [minorValue, profile]);
-
+  }
   // Add course to past semester
   const [showAddCourse, setShowAddCourse] = useState<string | null>(null);
   const [newCourseCode, setNewCourseCode] = useState("");
@@ -179,8 +163,8 @@ export default function CareerPage() {
       setCalendarSchedules(loadSchedules());
       setPastSchedules(loadPastSchedules());
       setProfile(nextProfile);
-      setMajorValue(nextProfile.major ?? "");
-      setMinorValue(nextProfile.minor ?? "");
+
+
       setLoaded(true);
     });
     if (!storedProfile) saveProfile(nextProfile);
@@ -193,8 +177,8 @@ export default function CareerPage() {
       const updatedProfile = loadProfile();
       if (updatedProfile) {
         setProfile(updatedProfile);
-        setMajorValue(updatedProfile.major ?? "");
-        setMinorValue(updatedProfile.minor ?? "");
+
+
       }
     });
   }, []);
@@ -219,7 +203,7 @@ export default function CareerPage() {
 
     const dialog = importDialogRef.current;
     const initialFocus = parsedSemesters.length > 0
-      ? dialog?.querySelector<HTMLInputElement>("#transcript-major")
+      ? dialog?.querySelector<HTMLButtonElement>("#transcript-major")
       : dialog?.querySelector<HTMLButtonElement>('[aria-label="Close transcript import"]');
     initialFocus?.focus();
 
@@ -233,7 +217,7 @@ export default function CareerPage() {
       if (event.key !== "Tab" || !dialog) return;
 
       const focusable = Array.from(
-        dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])')
+        dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled])')
       ).filter((element) => element.offsetParent !== null);
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -454,8 +438,8 @@ export default function CareerPage() {
       minor: importMinor.trim() || null,
     };
     setProfile(nextProfile);
-    setMajorValue(nextProfile.major);
-    setMinorValue(nextProfile.minor ?? "");
+
+
     saveProfile(nextProfile);
 
     setShowImport(false);
@@ -1072,51 +1056,13 @@ export default function CareerPage() {
                     <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Name</span>
                     <p className="text-sm font-medium text-foreground">{profile?.fullName ?? "—"}</p>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Major</span>
-                    {editMajor ? (
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <Input
-                          value={majorValue}
-                          onChange={(e) => setMajorValue(e.target.value)}
-                          placeholder="e.g. Computer Science"
-                          className="h-7 text-xs"
-                          autoFocus
-                          onKeyDown={(e) => { if (e.key === "Enter") saveMajor(); if (e.key === "Escape") { setEditMajor(false); setMajorValue(profile?.major ?? ""); }}}
-                        />
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={saveMajor}>Save</Button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => { setEditMajor(true); setMajorValue(profile?.major ?? ""); }}
-                        className="mt-0.5 block w-full text-left text-sm text-foreground transition-colors hover:text-primary"
-                      >
-                        {profile?.major || <span className="text-muted-foreground italic">Click to add</span>}
-                      </button>
-                    )}
+                  <div className="space-y-1.5">
+                    <label htmlFor="career-major" className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Major</label>
+                    <ProgramSelect id="career-major" kind="major" value={profile?.major ?? ""} onValueChange={(value) => saveProgram("major", value)} />
                   </div>
-                  <div>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Minor</span>
-                    {editMinor ? (
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <Input
-                          value={minorValue}
-                          onChange={(e) => setMinorValue(e.target.value)}
-                          placeholder="e.g. Mathematics"
-                          className="h-7 text-xs"
-                          autoFocus
-                          onKeyDown={(e) => { if (e.key === "Enter") saveMinor(); if (e.key === "Escape") { setEditMinor(false); setMinorValue(profile?.minor ?? ""); }}}
-                        />
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={saveMinor}>Save</Button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => { setEditMinor(true); setMinorValue(profile?.minor ?? ""); }}
-                        className="mt-0.5 block w-full text-left text-sm text-foreground transition-colors hover:text-primary"
-                      >
-                        {profile?.minor || <span className="text-muted-foreground italic">Click to add</span>}
-                      </button>
-                    )}
+                  <div className="space-y-1.5">
+                    <label htmlFor="career-minor" className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Minor</label>
+                    <ProgramSelect id="career-minor" kind="minor" value={profile?.minor ?? ""} onValueChange={(value) => saveProgram("minor", value)} />
                   </div>
                 </CardContent>
               </Card>
@@ -1278,24 +1224,11 @@ export default function CareerPage() {
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <label htmlFor="transcript-major" className="text-sm font-medium text-foreground">Major <span className="text-destructive">Required</span></label>
-                        <Input
-                          id="transcript-major"
-                          value={importMajor}
-                          onChange={(e) => setImportMajor(e.target.value)}
-                          placeholder="e.g. Computer Science"
-                          autoComplete="off"
-                          required
-                        />
+                        <ProgramSelect id="transcript-major" kind="major" value={importMajor} onValueChange={setImportMajor} required />
                       </div>
                       <div className="space-y-1.5">
                         <label htmlFor="transcript-minor" className="text-sm font-medium text-foreground">Minor <span className="text-muted-foreground">Optional</span></label>
-                        <Input
-                          id="transcript-minor"
-                          value={importMinor}
-                          onChange={(e) => setImportMinor(e.target.value)}
-                          placeholder="e.g. Mathematics, or leave blank"
-                          autoComplete="off"
-                        />
+                        <ProgramSelect id="transcript-minor" kind="minor" value={importMinor} onValueChange={setImportMinor} />
                       </div>
                     </div>
                   </section>
