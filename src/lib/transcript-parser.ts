@@ -16,7 +16,7 @@ export interface ParsedSemester {
   courses: ParsedCourse[];
 }
 
-const SEMESTER_RE = /(\d{4})\s*[-\u2013\u2014]\s*(\d{4})\s+Academic\s+Year\s*:?\s*(Fall|Spring|Summer)\s+Semester/i;
+const SEMESTER_RE = /(\d{4})\s*[-\u2013\u2014]\s*(\d{4})\s+Academic\s+Year\s*:?\s*(Fall|Spring|Summer)(?:\s+[IVX]+)?\s+(?:Semester|Session)/i;
 const COURSE_RE = /^[A-Z]{2,5}\s*\d{4}(?:-L)?$/i;
 const GRADE_RE = /^(?:A\+?|A-|B\+?|B-|C\+?|C-|D\+?|D-|F|P|W|I|NG|WIP)$/i;
 const EXCLUDED_TITLE_RE = /^(?:course\s+)?(?:number|title|grade|credits?|cr|type|repeat|hours?|gpa|semester|academic\s+year|totals?)\b/i;
@@ -120,7 +120,7 @@ export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
     const header = line.text.match(SEMESTER_RE);
     if (header) {
       const term = header[3].toLowerCase() as ParsedSemester["term"];
-      const year = Number.parseInt(term === "spring" ? header[2] : header[1], 10);
+      const year = Number.parseInt(term === "fall" ? header[1] : header[2], 10);
       current = semesters.find((semester) => semester.year === year && semester.term === term) ?? {
         label: header[0], year, term, courses: [],
       };

@@ -508,11 +508,14 @@ export default function CareerPage() {
   );
 
   // Stats
-  const cumulativeGpa = useMemo(
-    () => calculateCumulativeGpa(allSchedules),
-    [allSchedules]
+  const completedSchedules = allSchedules.filter(
+    (semester) => semester._source === "past" || getSemesterStatus(semester.term, semester.year) === "past"
   );
-  const earnedCredits = calculateTotalCredits(allSchedules.map(({ courses }) => ({
+  const cumulativeGpa = useMemo(
+    () => calculateCumulativeGpa(completedSchedules),
+    [completedSchedules]
+  );
+  const earnedCredits = calculateTotalCredits(completedSchedules.map(({ courses }) => ({
     courses: courses.filter(({ grade }) =>
       grade && !["F", "W", "I", "NG", "WIP"].includes(grade.toUpperCase())
     ),
@@ -521,7 +524,7 @@ export default function CareerPage() {
     .filter(({ term, year }) => getSemesterStatus(term, year) === "current")
     .flatMap(({ courses }) => courses)
     .reduce((sum, { grade, credits }) =>
-      sum + (!grade || grade.toUpperCase() === "WIP" ? credits : 0), 0);
+      sum + (grade?.toUpperCase() === "W" || grade?.toUpperCase() === "I" ? 0 : credits), 0);
   const totalCourses = useMemo(
     () => allSchedules.reduce((sum, s) => sum + s.courses.length, 0),
     [allSchedules]
@@ -543,9 +546,11 @@ export default function CareerPage() {
         status: getSemesterStatus(sem.term, sem.year),
         gpa: calculateSemesterGpa(sem.courses),
         credits: sem.courses.filter((c) =>
-          sem._source === "calendar"
-            ? c.grade === null
-            : c.grade !== null && !["W", "I"].includes(c.grade)
+          getSemesterStatus(sem.term, sem.year) === "current"
+            ? !["W", "I"].includes(c.grade ?? "")
+            : sem._source === "calendar"
+              ? c.grade === null
+              : c.grade !== null && !["W", "I"].includes(c.grade)
         ).reduce((sum, c) => sum + c.credits, 0),
         courseCount: sem.courses.length,
       })),
