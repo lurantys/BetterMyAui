@@ -5,6 +5,7 @@
 // --- Calendar / scheduling types ---
 
 export interface CalendarEvent {
+  transcriptTitle?: string;
   id: string;
   code: string;
   title: string;
@@ -226,6 +227,20 @@ export function termLabel(term: "fall" | "spring" | "summer"): string {
   return TERM_OPTIONS.find((t) => t.value === term)?.label ?? term;
 }
 
+export type SemesterStatus = "past" | "current" | "planned";
+
+/** Approximate academic term from the local calendar: Spring Jan–May, Summer Jun–Jul, Fall Aug–Dec. */
+export function getSemesterStatus(term: "fall" | "spring" | "summer", year: number, date = new Date()): SemesterStatus {
+  const month = date.getMonth();
+  const currentTerm = month <= 4 ? "spring" : month <= 6 ? "summer" : "fall";
+  const currentYear = date.getFullYear();
+  const order = { spring: 0, summer: 1, fall: 2 } as const;
+  const semesterIndex = year * 3 + order[term];
+  const currentIndex = currentYear * 3 + order[currentTerm];
+  if (semesterIndex === currentIndex) return "current";
+  return semesterIndex < currentIndex ? "past" : "planned";
+}
+
 // --- GPA helpers ---
 
 export const GRADE_OPTIONS = [
@@ -280,6 +295,13 @@ export function calculateSemesterGpa(
 export function calculateCumulativeGpa(
   semesters: { courses: GradedItem[] }[]
 ): number {
+  const { qualityPoints, gradedCredits } = calculateGpaTotals(semesters);
+  return gradedCredits === 0 ? 0 : qualityPoints / gradedCredits;
+}
+
+export function calculateGpaTotals(
+  semesters: { courses: GradedItem[] }[]
+): { qualityPoints: number; gradedCredits: number } {
   let totalPoints = 0;
   let totalCredits = 0;
   for (const sem of semesters) {
@@ -290,7 +312,7 @@ export function calculateCumulativeGpa(
       }
     }
   }
-  return totalCredits === 0 ? 0 : totalPoints / totalCredits;
+  return { qualityPoints: totalPoints, gradedCredits: totalCredits };
 }
 
 export function calculateTotalCredits(

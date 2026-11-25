@@ -40,6 +40,7 @@ import {
   CURRENT_YEAR,
   TERM_OPTIONS,
   termLabel,
+  getSemesterStatus,
   GRADE_OPTIONS,
   calculateSemesterGpa,
   calculateCumulativeGpa,
@@ -353,6 +354,7 @@ export default function CareerPage() {
         id: generateId(),
         code: c.code,
         title: catalog?.title || c.title,
+        transcriptTitle: c.title,
         credits: /-L$/i.test(c.code) || c.grade === "NG" || /exchange program/i.test(c.title)
           ? 0
           : getTranscriptCourseCredits(c.code, catalog?.credits),
@@ -374,8 +376,14 @@ export default function CareerPage() {
         const current = existing.get(key);
         if (!current) existing.set(key, sem);
         else {
-          const codes = new Set(current.courses.map((c) => c.code));
-          existing.set(key, { ...current, courses: [...current.courses, ...sem.courses.filter((c) => !codes.has(c.code))] });
+          const codeKey = (code: string) => code.replace(/\s+/g, "").toUpperCase();
+          const incomingByCode = new Map(sem.courses.map((course) => [codeKey(course.code), course]));
+          const codes = new Set(current.courses.map((course) => codeKey(course.code)));
+          const updated = current.courses.map((course) => {
+            const transcriptTitle = incomingByCode.get(codeKey(course.code))?.transcriptTitle;
+            return transcriptTitle ? { ...course, transcriptTitle } : course;
+          });
+          existing.set(key, { ...current, courses: [...updated, ...sem.courses.filter((course) => !codes.has(codeKey(course.code)))] });
         }
       }
       return Array.from(existing.values());
@@ -504,16 +512,16 @@ export default function CareerPage() {
     () => calculateCumulativeGpa(allSchedules),
     [allSchedules]
   );
-  const totalCredits = useMemo(
-    () => calculateTotalCredits(allSchedules) + calendarSchedules.reduce(
-      (sum, semester) => sum + semester.courses.reduce(
-        (semesterSum, course) => semesterSum + (course.grade === null ? course.credits : 0),
-        0
-      ),
-      0
+  const earnedCredits = calculateTotalCredits(allSchedules.map(({ courses }) => ({
+    courses: courses.filter(({ grade }) =>
+      grade && !["F", "W", "I", "NG", "WIP"].includes(grade.toUpperCase())
     ),
-    [allSchedules, calendarSchedules]
-  );
+  })));
+  const attemptingCredits = allSchedules
+    .filter(({ term, year }) => getSemesterStatus(term, year) === "current")
+    .flatMap(({ courses }) => courses)
+    .reduce((sum, { grade, credits }) =>
+      sum + (!grade || grade.toUpperCase() === "WIP" ? credits : 0), 0);
   const totalCourses = useMemo(
     () => allSchedules.reduce((sum, s) => sum + s.courses.length, 0),
     [allSchedules]
@@ -532,6 +540,7 @@ export default function CareerPage() {
         id: sem.id,
         label: `${termLabel(sem.term)} ${sem.year}`,
         source: sem._source,
+        status: getSemesterStatus(sem.term, sem.year),
         gpa: calculateSemesterGpa(sem.courses),
         credits: sem.courses.filter((c) =>
           sem._source === "calendar"
@@ -608,11 +617,13 @@ export default function CareerPage() {
                       <span>
                         {termLabel(s.term)} {s.year}
                       </span>
-                      {s._source === "past" && (
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                          Past
-                        </span>
-                      )}
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {getSemesterStatus(s.term, s.year) === "current"
+                          ? "Current"
+                          : s._source === "past" || getSemesterStatus(s.term, s.year) === "past"
+                            ? "Past"
+                            : "Planned"}
+                      </span>
                       <span className="text-xs tabular-nums opacity-60">
                         {s.courses.reduce((sum, course) => sum + course.credits, 0)} cr
                       </span>
@@ -1051,38 +1062,18 @@ export default function CareerPage() {
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <GpaGauge gpa={cumulativeGpa} label="Cumulative GPA" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        Total Credits
-                      </span>
-                      <p className="type-display text-lg">
-                        {totalCredits}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        Total Courses
-                      </span>
-                      <p className="type-display text-lg">
-                        {totalCourses}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="border-t border-border pt-3">
-                    <span className="text-xs text-muted-foreground">
-                      Classification
-                    </span>
-                    <p className="text-sm font-medium">
-                      {totalCredits >= 90
-                        ? "Senior"
-                        : totalCredits >= 60
-                          ? "Junior"
-                          : totalCredits >= 30
-                            ? "Sophomore"
-                            : "Freshman"}
-                    </p>
-                  </div>
+                  <dl className="divide-y divide-border border-t border-border">
+                    {[
+                      ["Total Credits Earned", earnedCredits],
+                      ["Total Credits Attempting", attemptingCredits],
+                      ["Total Courses", totalCourses],
+                    ].map(([label, total]) => (
+                      <div key={label} className="flex items-center justify-between gap-3 py-2 last:pb-0">
+                        <dt className="text-xs text-muted-foreground">{label}</dt>
+                        <dd className="type-display text-base tabular-nums">{total}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 </CardContent>
               </Card>
 
@@ -1132,9 +1123,9 @@ export default function CareerPage() {
                             <span className="text-muted-foreground">
                               {stat.label}
                             </span>
-                            {stat.source === "past" && (
+                            {(stat.status === "current" || stat.source === "past" || stat.status === "past") && (
                               <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
-                                past
+                                {stat.status === "current" ? "current" : "past"}
                               </span>
                             )}
                           </div>
