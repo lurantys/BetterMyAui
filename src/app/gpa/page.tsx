@@ -119,7 +119,11 @@ export default function CareerPage() {
   const [importError, setImportError] = useState("");
   const [parsedSemesters, setParsedSemesters] = useState<ParsedSemester[]>([]);
   const [selectedForImport, setSelectedForImport] = useState<Set<number>>(new Set());
+  const [importMajor, setImportMajor] = useState("");
+  const [importMinor, setImportMinor] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importDialogRef = useRef<HTMLDivElement>(null);
+  const importTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [editMajor, setEditMajor] = useState(false);
@@ -206,6 +210,47 @@ export default function CareerPage() {
       savePastSchedules(pastSchedules);
     }
   }, [pastSchedules, loaded]);
+
+  useEffect(() => {
+    if (!showImport) {
+      importTriggerRef.current?.focus();
+      return;
+    }
+
+    const dialog = importDialogRef.current;
+    const initialFocus = parsedSemesters.length > 0
+      ? dialog?.querySelector<HTMLInputElement>("#transcript-major")
+      : dialog?.querySelector<HTMLButtonElement>('[aria-label="Close transcript import"]');
+    initialFocus?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowImport(false);
+        setParsedSemesters([]);
+        setSelectedForImport(new Set());
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])')
+      ).filter((element) => element.offsetParent !== null);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [parsedSemesters.length, showImport]);
 
   // Merge and sort all semesters
   const allSchedules = useMemo(() => {
@@ -336,7 +381,8 @@ export default function CareerPage() {
 
   const handleImport = useCallback(async () => {
     const toImport = parsedSemesters.filter((_, i) => selectedForImport.has(i));
-    if (toImport.length === 0) return;
+    const major = importMajor.trim();
+    if (toImport.length === 0 || !major) return;
 
     // Fetch catalog to enrich courses with correct titles, credits, prereqs
     const catalogMap: Map<string, CatalogCourse> = new Map();
@@ -402,10 +448,20 @@ export default function CareerPage() {
     if (newPast.length) setPastSchedules((prev) => mergeSchedules(prev, newPast));
     if (newCalendar.length) setCalendarSchedules((prev) => mergeSchedules(prev, newCalendar));
 
+    const nextProfile = {
+      fullName: profile?.fullName ?? "Student",
+      major,
+      minor: importMinor.trim() || null,
+    };
+    setProfile(nextProfile);
+    setMajorValue(nextProfile.major);
+    setMinorValue(nextProfile.minor ?? "");
+    saveProfile(nextProfile);
+
     setShowImport(false);
     setParsedSemesters([]);
     setSelectedForImport(new Set());
-  }, [parsedSemesters, selectedForImport]);
+  }, [importMajor, importMinor, parsedSemesters, profile, selectedForImport]);
 
   // Add course to past semester
   const addCourse = useCallback(() => {
@@ -657,7 +713,13 @@ export default function CareerPage() {
                           <span>Add past semester</span>
                         </button>
                         <button
-                          onClick={() => setShowImport(true)}
+                          ref={importTriggerRef}
+                          onClick={() => {
+                            setImportMajor(profile?.major ?? "");
+                            setImportMinor(profile?.minor ?? "");
+                            setImportError("");
+                            setShowImport(true);
+                          }}
                           className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           <Upload className="h-3.5 w-3.5" />
@@ -1162,12 +1224,13 @@ export default function CareerPage() {
       {/* Transcript Import Modal */}
       {showImport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
-          <div className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
+          <div ref={importDialogRef} role="dialog" aria-modal="true" aria-labelledby="transcript-import-title" className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h2 className="text-lg font-semibold">Import Transcript</h2>
+              <h2 id="transcript-import-title" className="text-lg font-semibold">Import Transcript</h2>
               <button
                 onClick={() => { setShowImport(false); setParsedSemesters([]); setSelectedForImport(new Set()); }}
                 className="rounded p-1 text-muted-foreground hover:text-foreground"
+                aria-label="Close transcript import"
               >
                 <span className="text-lg">&times;</span>
               </button>
@@ -1209,6 +1272,34 @@ export default function CareerPage() {
 
               {parsedSemesters.length > 0 && (
                 <div className="space-y-4">
+                  <section aria-labelledby="transcript-program-title" className="rounded-md border border-border/70 p-4">
+                    <h3 id="transcript-program-title" className="text-sm font-medium text-foreground">Program information</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">Used to tailor degree planning and saved to My Career.</p>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label htmlFor="transcript-major" className="text-sm font-medium text-foreground">Major <span className="text-destructive">Required</span></label>
+                        <Input
+                          id="transcript-major"
+                          value={importMajor}
+                          onChange={(e) => setImportMajor(e.target.value)}
+                          placeholder="e.g. Computer Science"
+                          autoComplete="off"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label htmlFor="transcript-minor" className="text-sm font-medium text-foreground">Minor <span className="text-muted-foreground">Optional</span></label>
+                        <Input
+                          id="transcript-minor"
+                          value={importMinor}
+                          onChange={(e) => setImportMinor(e.target.value)}
+                          placeholder="e.g. Mathematics, or leave blank"
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">
                       Found {parsedSemesters.reduce((sum, s) => sum + s.courses.length, 0)} courses across {parsedSemesters.length} semesters
@@ -1293,7 +1384,7 @@ export default function CareerPage() {
                 <Button
                   size="sm"
                   onClick={handleImport}
-                  disabled={selectedForImport.size === 0}
+                  disabled={selectedForImport.size === 0 || !importMajor.trim()}
                 >
                   Import {selectedForImport.size} semester{selectedForImport.size !== 1 ? "s" : ""}
                 </Button>
