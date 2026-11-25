@@ -1,0 +1,1566 @@
+{
+  "program": "BACS",
+  "name": "Communication Studies",
+  "catalog": "2025-2027",
+  "source": "BACS_Program Sheet_2025-2027.pdf",
+  "totalCredits": 129,
+  "requirements": {
+    "generalEducation": {
+      "label": "General Education (GenEd)",
+      "credits": 40,
+      "courses": [],
+      "groups": {
+        "First Year Experience": {
+          "label": "First Year Experience",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FYE 1101",
+              "title": "First Year Experience Seminar I"
+            },
+            {
+              "code": "FYE 1102",
+              "title": "First Year Experience Seminar II"
+            }
+          ],
+          "groups": {}
+        },
+        "Foundations for Academic Success": {
+          "label": "Foundations for Academic Success",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FAS 0210",
+              "title": "Learning to Learn via the Examined Life: Navigating the Liberal Arts and Foundations for Sciences",
+              "credits": 0
+            },
+            {
+              "code": "FAS 1220",
+              "title": "Placing Ourselves in the World: Critical Thinking and Practice"
+            }
+          ],
+          "groups": {}
+        },
+        "Arabic": {
+          "label": "Arabic",
+          "credits": 2,
+          "courses": [],
+          "groups": {
+            "Moroccan baccalaureate or Arabic-based high school degree": {
+              "label": "Moroccan baccalaureate or Arabic-based high school degree",
+              "credits": null,
+              "courses": [
+                {
+                  "code": "ARB 1241",
+                  "title": "Arabic Literature"
+                }
+              ],
+              "groups": {}
+            },
+            "Foreign cultural mission baccalaureate": {
+              "label": "Foreign cultural mission baccalaureate",
+              "credits": null,
+              "courses": [
+                {
+                  "code": "ARB 1201",
+                  "title": "Basic Standard Arabic"
+                },
+                {
+                  "code": "ARB 1202",
+                  "title": "Arabic for Academic Purposes"
+                },
+                {
+                  "code": "ARB 1203",
+                  "title": "Arabic for Communication Purposes"
+                }
+              ],
+              "groups": {}
+            },
+            "International high school degree with no prior Arabic instruction": {
+              "label": "International high school degree with no prior Arabic instruction",
+              "credits": null,
+              "courses": [
+                {
+                  "code": "ARA 1201",
+                  "title": "Arabic Beginning"
+                },
+                {
+                  "code": "ARA 1202",
+                  "title": "Arabic Intermediate"
+                },
+                {
+                  "code": "ARA 1203",
+                  "title": "Arabic Advanced"
+                },
+                {
+                  "code": "ARA 3299",
+                  "title": "Special Topics in Arabic for Non-Native Speakers"
+                }
+              ],
+              "groups": {}
+            }
+          },
+          "choose": 1
+        },
+        "French": {
+          "label": "French",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FRN 3210",
+              "title": "Advanced French Writing and Speaking Skills"
+            }
+          ],
+          "groups": {}
+        },
+        "Communication": {
+          "label": "Communication",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "COM 1301",
+              "title": "The Power of Voice",
+              "details": "(Prerequisite: ENG 1301)"
+            }
+          ],
+          "groups": {}
+        },
+        "Computer Science": {
+          "label": "Computer Science",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "CSC 1300",
+              "title": "Introduction to Computers"
+            }
+          ],
+          "groups": {}
+        },
+        "English": {
+          "label": "English",
+          "credits": 6,
+          "courses": [
+            {
+              "code": "ENG 1301",
+              "title": "Rhetoric and Composition",
+              "details": "(Prerequisites: pass LC modules; Co-requisite: FAS 0210)"
+            },
+            {
+              "code": "ENG 2301",
+              "title": "Inquire, Inspire, Impact: Critical Discourse in the Human and Social Sciences.",
+              "details": "(Prerequisites: ENG 1301 and COM 1301)"
+            }
+          ],
+          "groups": {}
+        },
+        "History or Political Science": {
+          "label": "History or Political Science",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "HIS 1301",
+              "title": "History of the Arab World",
+              "details": "(Co-requisite: FAS 1220)"
+            },
+            {
+              "code": "HIS 2301",
+              "title": "World History",
+              "details": "(Prerequisites: ENG 1301 and FAS 1220)"
+            },
+            {
+              "code": "HUM 1310",
+              "title": "History and Culture of the Amazigh",
+              "details": "(Co-requisite: FAS 1220)"
+            },
+            {
+              "code": "HUM 2302",
+              "title": "Intro. to Islamic Civ.",
+              "details": "(Prerequisites: FAS 1220 and Sophomore Classification)"
+            },
+            {
+              "code": "PSC 2301",
+              "title": "Comparative Political Systems",
+              "details": "(Prerequisites: ENG 1301 and FAS 1220)"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Humanities": {
+          "label": "Humanities",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "LIT 2301",
+              "title": "Major Works of World Lit.",
+              "details": "(Prerequisites: FAS 1220 and ENG 1301)"
+            },
+            {
+              "code": "HUM 2306",
+              "title": "Comparative Religion",
+              "details": "(Prerequisites: FAS 1220 and Sophomore Classification)"
+            },
+            {
+              "code": "PHI 2301",
+              "title": "Philosophical Thought",
+              "details": "(Prerequisites: FAS 1220 and ENG 1301)"
+            },
+            {
+              "code": "PHI 2302",
+              "title": "History of Ideas",
+              "details": "(Prerequisites: FAS 1220 and ENG 1301)"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Art Appreciation & Creation": {
+          "label": "Art Appreciation & Creation",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "ART 1301",
+              "title": "Visual and Interactive Arts"
+            },
+            {
+              "code": "ART 1302",
+              "title": "Design Thinking and Practice"
+            },
+            {
+              "code": "ART 1303",
+              "title": "Performing Arts and Performance Studies"
+            },
+            {
+              "code": "ART 1304",
+              "title": "Culture and Heritage Studies"
+            },
+            {
+              "code": "ART 1305",
+              "title": "Art Histories"
+            },
+            {
+              "code": "ART 2301",
+              "title": "Fine Arts Studio"
+            },
+            {
+              "code": "ART 2302",
+              "title": "Performing Arts Studio"
+            },
+            {
+              "code": "ART 2303",
+              "title": "Digital Production and Interactive Arts Studio"
+            },
+            {
+              "code": "ART 1399",
+              "title": "Special Topics in Arts"
+            },
+            {
+              "code": "ART 2399",
+              "title": "Special Topics in Creative Practice"
+            },
+            {
+              "code": "ART 3399",
+              "title": "Special Topics in Cultural Production",
+              "details": "(Prerequisite: FAS 1220)"
+            },
+            {
+              "code": "ENG 2320",
+              "title": "Creative Writing",
+              "details": "(Prerequisites: FAS 1220 and ENG 1301)"
+            },
+            {
+              "code": "ENG 2321",
+              "title": "Writing for Theatre and Film",
+              "details": "(Prerequisites: FAS 1220 and ENG 1301)"
+            },
+            {
+              "code": "COM 2427",
+              "title": "Graphic Design",
+              "details": "(Prerequisite: Sophomore Classification)"
+            },
+            {
+              "code": "HUM 2301",
+              "title": "Islamic Art & Architecture",
+              "details": "(Prerequisite: FAS 1220)"
+            },
+            {
+              "code": "LIT 3370",
+              "title": "Aesthetics",
+              "details": "(Prerequisite: Junior Classification)"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Mathematics": {
+          "label": "Mathematics",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "MTH 1388",
+              "title": "Introductory Mathematical Thinking"
+            },
+            {
+              "code": "MTH 1305",
+              "title": "Mathematics for Business"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Physical Sciences": {
+          "label": "Physical Sciences",
+          "credits": 4,
+          "courses": [
+            {
+              "code": "BIO 1400",
+              "title": "Environmental Biology"
+            },
+            {
+              "code": "CHE 1400",
+              "title": "Chemistry and the Environment"
+            },
+            {
+              "code": "PHY 1400",
+              "title": "Conceptual Physics"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Social Sciences": {
+          "label": "Social Sciences",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "SOC 1301",
+              "title": "Principles of Sociology",
+              "details": "(Co-requisite: FAS 1220)"
+            },
+            {
+              "code": "GEO 1301",
+              "title": "Intro. to Geography",
+              "details": "(Co-requisite: FAS 0120)"
+            },
+            {
+              "code": "SSC 1310",
+              "title": "Intro. to Anthropology",
+              "details": "(Co-requisite: FAS 1220)"
+            },
+            {
+              "code": "PSY 1301",
+              "title": "Intro. to Psychology",
+              "details": "(Co-requisite: FAS 1220)"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Civic Engagement": {
+          "label": "Civic Engagement",
+          "credits": 1,
+          "courses": [
+            {
+              "code": "SLP 1101"
+            }
+          ],
+          "groups": {},
+          "choose": 1,
+          "options": [
+            "Service-learning course",
+            "CIP"
+          ]
+        }
+      },
+      "notes": [
+        "1 FAS 0210 is a non-degree, credit-bearing course that is required for graduation. It provides 2 non-degree credits, which do not count toward your degree requirements.",
+        "2 All degree-seeking students must complete 2 SCH in Arabic by enrolling in one designated course. Placement is determined as follows: → Students holding a Moroccan baccalaureate are automatically enrolled in ARB 1241 without a placement test. → Students holding a cultural mission baccalaureate (French, Spanish, among others) must take a placement test to determine their appropriate one ARB course. → Students holding an international high school diploma with no prior Arabic instruction must take a placement test to determine their appropriate one ARA course.",
+        "3 Students with a Moroccan baccalaureate must complete 2 SCH in French by taking FRN 3210 as their exit -level course. All newly admitted students must take the free international Test d’Évaluation de Français (TEF) to determine their required French courses and levels. If TEF results indicate additional prerequisite courses, these will not count toward the degree. Students cannot take French in their first semester and may be exempted with a minimum C1 in TEF and 16 in GAT. International students with no prior French knowledge may fulfill their GenEd language requirement with Spanish, German, Turkish, Italian, or Korean.",
+        "4 Students minoring in Business Administration must take MTH 1305 as part of their GenEd requirements. If they take MTH 1388 as a prerequisite for MTH 1305, its credits will not count toward the degree.",
+        "5 A course with an SL component must be taken as co-requisites. Failing the course will de facto result in failing the SL component, too. Failing the SL component will result in an NRP in the SL component only. Students who fail the SL component must enroll in another course from their degree plan with an SL component in the subsequent semesters.",
+        "6 In case no subsequent course in the student’s degree plan is offered with an SL component, he/she must submit an SL proposal to the SLP Committee and enroll in SLP 1101.",
+        "The sheet lists 40 SCH for GenEd. The requirements shown in that table add up to 39 SCH."
+      ]
+    },
+    "commonCore": {
+      "label": "School Core Curriculum",
+      "credits": 24,
+      "courses": [
+        {
+          "code": "SSC 1301",
+          "title": "Culture, Space, and Place",
+          "details": "(Prerequisite: FAS 1220)",
+          "credits": 3
+        },
+        {
+          "code": "COM 2301",
+          "title": "Digital Media in the Age of AI",
+          "details": "(Prerequisite: COM 1304)",
+          "credits": 3
+        },
+        {
+          "code": "SSC 2302",
+          "title": "Critical Theory and Practice",
+          "details": "(Prerequisite: FAS 1220 and GEO 1301/PSY 1301/SOC 1301/SSC 1310)",
+          "credits": 3
+        },
+        {
+          "code": "STA 2301",
+          "title": "Statistics and Economic Analysis",
+          "details": "(Prerequisite: MTH 1388 or MTH 1305 and CSC 1300)",
+          "credits": 3
+        },
+        {
+          "code": "HRD 3302",
+          "title": "Leadership and Ethics in Profession and Practice",
+          "details": "(Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "SSC 3303",
+          "title": "Research Design and Methods",
+          "details": "(Prerequisite: Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "SSC 4302",
+          "title": "Senior Capstone",
+          "details": "(Prerequisite: STA 2301 and SSC 3303 and Senior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "INT 4011",
+          "title": "Career Planning and Design",
+          "details": "(Prerequisite: ENG 2301 and French requirements , 72 SCH minimum)",
+          "credits": 0
+        },
+        {
+          "code": "INT 4012",
+          "title": "Internship Fieldwork",
+          "details": "(Prerequisite: INT 4011)",
+          "credits": 0
+        },
+        {
+          "code": "INT 4302",
+          "title": "SSAH Internship",
+          "details": "(Prerequisite: INT 4012 and Senior Classification)",
+          "credits": 3
+        }
+      ],
+      "groups": {}
+    },
+    "majorCore": {
+      "label": "Communication and Media Studies Core",
+      "credits": 26,
+      "courses": [
+        {
+          "code": "COM 1304",
+          "title": "Introduction to Communication and Media Studies",
+          "details": "(Prerequisite: FAS 1220)",
+          "credits": 3
+        },
+        {
+          "code": "COM 2403",
+          "title": "Digital Photography and Visual Narrative",
+          "details": "(Prerequisite: COM 1304)",
+          "credits": 4
+        },
+        {
+          "code": "COM 2427",
+          "title": "Graphic Design",
+          "details": "(Prerequisite: COM 2403)",
+          "credits": 4
+        },
+        {
+          "code": "COM 3301",
+          "title": "Public Relations",
+          "details": "(Prerequisites: COM 1304)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3313",
+          "title": "Transnational Media Flows",
+          "details": "(Prerequisites: COM 1304)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3320",
+          "title": "Communication Theories",
+          "details": "(Prerequisites: COM 1304 and Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3321",
+          "title": "Moroccan Media and Society",
+          "details": "(Prerequisites: COM 1304 and Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3328",
+          "title": "Cultural Perspectives and Media Analysis",
+          "details": "(Prerequisite: Junior Classification)",
+          "credits": 3
+        }
+      ],
+      "groups": {}
+    },
+    "majorElectives": {
+      "label": "Optional Courses",
+      "credits": 15,
+      "courses": [
+        {
+          "code": "COM 2404",
+          "title": "Film Production",
+          "details": "(Prerequisite: COM 1304)",
+          "credits": 4
+        },
+        {
+          "code": "COM 3303",
+          "title": "Media Policy (COM 1304 and Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3402",
+          "title": "Advanced Film Production",
+          "details": "(Prerequisites: COM 2304 and Junior Classification)",
+          "credits": 4
+        },
+        {
+          "code": "COM 3311",
+          "title": "Marketing Communication",
+          "details": "(Prerequisites: STA 2301, Co-requisite: COM 2427 and Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3304",
+          "title": "Alternative Media",
+          "details": "(Prerequisites: COM 1304 and Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3315",
+          "title": "Media and Gender",
+          "details": "(Prerequisite: Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3330",
+          "title": "Organizational Communication",
+          "details": "(Prerequisites: COM 2301 and Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3398",
+          "title": "Special Topics in Media",
+          "details": "(Prerequisite: Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 3399",
+          "title": "Special Topics in Communication",
+          "details": "(Prerequisite: Junior Classification)",
+          "credits": 3
+        },
+        {
+          "code": "COM 4401",
+          "title": "Digital Content Creation and AI Studio",
+          "details": "(Prerequisites: CM 2427, or Instructor’s approval)",
+          "credits": 4
+        }
+      ],
+      "groups": {},
+      "minimumCredits": 15
+    },
+    "concentrations": null,
+    "minors": {
+      "label": "Minors",
+      "credits": [
+        15,
+        16
+      ],
+      "courses": [],
+      "groups": {
+        "Environmental Studies": {
+          "label": "Environmental Studies",
+          "credits": [
+            15,
+            16
+          ],
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "GEO 1301",
+                  "title": "Introduction to Geography",
+                  "details": "(Co-requisite: FAS 0120)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 2305",
+                  "title": "Sustainable Earth Systems",
+                  "details": "(Prerequisites: GEO 1301)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": [
+                9,
+                10
+              ],
+              "courses": [
+                {
+                  "code": "ECO 2315",
+                  "title": "Environmental Economics and Circular Economy",
+                  "details": "(Prerequisite: ECO 1300 or ECO 2302 or equivalent)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 2303",
+                  "title": "Geomorphology",
+                  "details": "(Prerequisite: GEO 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 2304",
+                  "title": "Climatology",
+                  "details": "(Prerequisite: GEO 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 2306",
+                  "title": "Geographic Information Systems",
+                  "details": "(Prerequisite: GEO 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "HUM 2315",
+                  "title": "Environmental Ethics",
+                  "details": "(Prerequisite: GEO 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSC 3315",
+                  "title": "Environmental Laws and Policies",
+                  "details": "(Prerequisite: HUM 2315)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3405",
+                  "title": "Field Methods",
+                  "details": "(Prerequisite: SSC 3303)",
+                  "credits": 4
+                },
+                {
+                  "code": "BIO 3315",
+                  "title": "Biodiversity",
+                  "details": "(Prerequisite: BIO 1401 and GEO 2305)",
+                  "credits": 3
+                },
+                {
+                  "code": "ECO 3315",
+                  "title": "Environmental Policy and Economics I",
+                  "details": "(Prerequisite: ECO 2315 and PSC 3315)",
+                  "credits": 3
+                },
+                {
+                  "code": "ECO 4315",
+                  "title": "Environmental Policy and Economics II",
+                  "details": "(Prerequisite: ECO 3315)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENV 3301",
+                  "title": "Resource Management",
+                  "details": "(Prerequisite: GEO 2305)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENV 3302",
+                  "title": "Renewable Energy and Conservation",
+                  "details": "(Prerequisite: GEO 2305)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENV 3304",
+                  "title": "Environmental Risk Assessment",
+                  "details": "(Prerequisite: GEO 2305)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENV 3305",
+                  "title": "Agriculture and Food Systems",
+                  "details": "(Prerequisite: GEO 2305)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENV 3399",
+                  "title": "Special Topics in Environmental Studies",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 3302",
+                  "title": "Hydrology and Water Resources",
+                  "details": "(Prerequisite: GEO 2303 and GEO 2304)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 3303",
+                  "title": "Advanced GIS and Remote Sensing",
+                  "details": "(Prerequisite: GEO 2306)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 4303",
+                  "title": "Geospatial Monitoring and Remote Sensing",
+                  "details": "(Prerequisite: GEO 2306)",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 4304",
+                  "title": "Cartography and Data Visualization",
+                  "details": "(Prerequisite: GEO 2306)",
+                  "credits": 3
+                },
+                {
+                  "code": "HUM 2313",
+                  "title": "Religion and the Natural World",
+                  "details": "(Prerequisite: Sophomore Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 2315",
+                  "title": "Global Politics of Water",
+                  "details": "(Prerequisite: Sophomore Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 3311",
+                  "title": "Environmental Dimensions of Security",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "PLN 3301",
+                  "title": "Project Management",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "PLN 3305",
+                  "title": "Designing with the Environment",
+                  "details": "(Prerequisite: GEO 2305 and GEO 2306)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 2340",
+                  "title": "Gender, Environmental Justice, and Sustainability",
+                  "details": "(Prerequisite: Sophomore Classification)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 3,
+              "rule": "In addition, students must choose three of the following courses"
+            }
+          }
+        },
+        "Gender Studies": {
+          "label": "Gender Studies",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 12,
+              "courses": [
+                {
+                  "code": "SSC 2315",
+                  "title": "Sex, Gender, and Power",
+                  "details": "(Prerequisites: ENG 1301 and any Gen Ed Social Science course)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3311",
+                  "title": "Women and Economic Development",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "COM 3315",
+                  "title": "Media and Gender",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3316",
+                  "title": "Theories and Politics of Gender",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 3,
+              "courses": [
+                {
+                  "code": "PSY 3306",
+                  "title": "Psychology of Identity",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3398",
+                  "title": "Special Topics in Gender Studies",
+                  "credits": 3
+                },
+                {
+                  "requirement": "Any optional course from among those offered in the various SSAH majors with a gender component.",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 1,
+              "rule": "In addition , students must complete one optional course from the following or one offered in SSAH"
+            }
+          },
+          "notes": [
+            "majors.",
+            "dimension."
+          ]
+        },
+        "Psychology": {
+          "label": "Psychology",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "PSY 1303",
+                  "title": "Abnormal Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 2302",
+                  "title": "Cognitive Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "PSY 3302",
+                  "title": "Social Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3305",
+                  "title": "Interpersonal Relations and Conflict Resolution",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3304",
+                  "title": "Industrial and Organizational Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3306",
+                  "title": "Psychology of Identity",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 2303",
+                  "title": "Developmental Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3397",
+                  "title": "Language Acquisition",
+                  "details": "(Prerequisite: PSY 2302)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3395",
+                  "title": "Educational Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3391",
+                  "title": "Forensic Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3392",
+                  "title": "Psychology of Social Media",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3393",
+                  "title": "Political Psychology",
+                  "details": "(Prerequisite: PSY 1301)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 3,
+              "rule": "In addition, students must choose three of the following courses"
+            }
+          }
+        },
+        "International Studies": {
+          "label": "International Studies",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "PSC 2301",
+                  "title": "Comparative Political Systems",
+                  "details": "(Prerequisites: FAS 1220 and ENG 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 2301",
+                  "title": "Theories of International Relations",
+                  "details": "(Prerequisite: PSC 2301)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "ECO 2310",
+                  "title": "Introduction to International Economics",
+                  "credits": 3
+                },
+                {
+                  "code": "GEO 1301",
+                  "title": "Introduction to Geography",
+                  "details": "(Co-requisite: FAS 0210)",
+                  "credits": 3
+                },
+                {
+                  "code": "HIS 3301",
+                  "title": "International History: 1914 to the present",
+                  "details": "(Prerequisite: HIS 1301 or HIS 2301)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 3303",
+                  "title": "International Law",
+                  "details": "(Prerequisite: INS 2301)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2,
+              "rule": "In addition, students must choose two of the following courses"
+            },
+            "Additional Optional Course": {
+              "label": "Additional Optional Course",
+              "credits": 3,
+              "courses": [],
+              "groups": {},
+              "rule": "In addition, students take one optional course from the International Studies concentrations"
+            }
+          },
+          "notes": [
+            "7 It is recommended that students choosing this minor take SSC 2315 before they take the remaining three courses.",
+            "8 Students minoring in IS must take PSC 2301 as part of their minor. To fulfill the GenEd requirement, they may choose from HIS 1301, HIS 2301, HUM 1310, or HUM 2302."
+          ]
+        },
+        "Human Resources Development": {
+          "label": "Human Resources Development",
+          "credits": 16,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 10,
+              "courses": [
+                {
+                  "code": "HRD 2300",
+                  "title": "Introduction to Human Resource Management and Development",
+                  "details": "(Prerequisite: FAS 1220)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 2301",
+                  "title": "Business Environment and Analysis for HR",
+                  "details": "(Prerequisite: FAS 1220)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 3401",
+                  "title": "Human Resource Management",
+                  "details": "(Prerequisite: HRD 2300 or special permission)",
+                  "credits": 4
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "HRD 3303",
+                  "title": "Training and Development",
+                  "details": "(Prerequisite: HRD 2300)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 3399",
+                  "title": "Special Topics in HRD",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 3306",
+                  "title": "Needs Assessment and Organizational Effectiveness",
+                  "details": "(Prerequisites: HRD 2300 and",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4300",
+                  "title": "Strategic HRD",
+                  "details": "(Prerequisites: HRD 2301 and HRD 3306)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4303",
+                  "title": "Leadership & Management Development",
+                  "details": "(Prerequisites: PSY 3304 or MGT 3305; Co- requisite: HRD 3303)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4304",
+                  "title": "Consulting for HRD",
+                  "details": "(Prerequisites: HRD 2301; Co-requisite: HRD 3306)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4306",
+                  "title": "Organizational Development",
+                  "details": "(Prerequisites: PSY 3304; Co-requisite: HRD 3306)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4307",
+                  "title": "Career Development",
+                  "details": "(Prerequisites: HRD 2300 and HRD 3401)",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4308",
+                  "title": "Global HRD",
+                  "details": "(Prerequisites: HRD 2301 and HRD 4300)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2,
+              "rule": "In addition, students must choose two of the following courses"
+            }
+          }
+        },
+        "Leadership": {
+          "label": "Leadership",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "LDR 2301",
+                  "title": "Personal Development for Leadership",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4303",
+                  "title": "Leadership and Management Development",
+                  "credits": 3
+                },
+                {
+                  "code": "LDR 4301",
+                  "title": "Leadership Practicum",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 6,
+              "courses": [
+                {
+                  "requirement": "GenEd Social Sciences choice",
+                  "credits": 3,
+                  "choose": 1,
+                  "courses": [
+                    {
+                      "code": "PSY 1301",
+                      "title": "Introduction to Psychology"
+                    },
+                    {
+                      "code": "SOC 1301",
+                      "title": "Introduction to Sociology"
+                    }
+                  ]
+                },
+                {
+                  "code": "COM 3303",
+                  "title": "Media Policy",
+                  "credits": 3
+                },
+                {
+                  "code": "GBU 3302",
+                  "title": "Legal Environment and Ethics",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 2301",
+                  "title": "Business Environment and Analysis for HR",
+                  "credits": 3
+                },
+                {
+                  "code": "HRD 4306",
+                  "title": "Organizational Development",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 3305",
+                  "title": "Organizational Behavior",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 3306",
+                  "title": "Conflict Management",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 4308",
+                  "title": "Management of Change",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 4312",
+                  "title": "Project Management",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 4314",
+                  "title": "Cross-cultural Management",
+                  "credits": 3
+                },
+                {
+                  "code": "PSC 3311",
+                  "title": "Politics in the Developing World",
+                  "credits": 3
+                },
+                {
+                  "code": "PSY 3305",
+                  "title": "Interpersonal Relations and Conflict Resolution",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2,
+              "rule": "In addition, students must choose two of the following courses"
+            }
+          },
+          "notes": [
+            "9 Students must take either PSY 1301 or SOC 1301 to fulfill the GenEd Social Science requirement; however, these courses do not count toward the SCH for the minor."
+          ]
+        },
+        "African Studies": {
+          "label": "African Studies",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "HUM 2371",
+                  "title": "Popular Culture in Africa",
+                  "details": "(Prerequisite: FAS1220)",
+                  "credits": 3
+                },
+                {
+                  "code": "PSC 2371",
+                  "title": "Introduction to African Politics",
+                  "details": "(Prerequisite: PSC 230110)",
+                  "credits": 3
+                },
+                {
+                  "code": "HIS 2371",
+                  "title": "History & Cultures of Sub-Saharan Africa",
+                  "details": "(Prerequisite: Sophomore Classification)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "HIS 3311",
+                  "title": "Modern Algeria",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "LIT 3371",
+                  "title": "African Literature",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 3371",
+                  "title": "Africa in World Politics",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 3372",
+                  "title": "Conflict in Contemporary Africa",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 3373",
+                  "title": "US Relations with Sub-Saharan Africa",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "INS 3374",
+                  "title": "EU Relations with Sub-Saharan Africa",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 2371",
+                  "title": "Ethnography in Africa",
+                  "details": "(Prerequisite: GEO 1301 or SOC 1301 or SSC 1310 or PSY 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3371",
+                  "title": "Urbanization in Sub-Saharan Africa",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3372",
+                  "title": "The Political Economy of Development in Africa",
+                  "details": "(Prerequisites: PSC 2301 and ECO 2310)",
+                  "credits": 3
+                },
+                {
+                  "code": "SSC 3379",
+                  "title": "Special Topics in African Studies",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2,
+              "rule": "In addition, students must choose two of the following courses"
+            }
+          }
+        },
+        "English": {
+          "label": "English",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Writing Courses": {
+              "label": "Writing Courses",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "ENG 2311",
+                  "title": "Translation",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENG 2312",
+                  "title": "News Reporting: An Introduction",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENG 2313",
+                  "title": "Nonfiction Narrative",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENG 2320",
+                  "title": "Creative Writing",
+                  "details": "(Prerequisite: ENG 1301)",
+                  "credits": 3
+                },
+                {
+                  "code": "ENG 2321",
+                  "title": "Writing for Theatre and Film (",
+                  "details": "(Prerequisite: ENG 1301)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2
+            },
+            "Literature Courses": {
+              "label": "Literature Courses",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "LIT 3370",
+                  "title": "Aesthetics",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "HUM 2302",
+                  "title": "as an elective."
+                },
+                {
+                  "code": "LIT 3371",
+                  "title": "African Literature: Survey(s)",
+                  "credits": 3
+                },
+                {
+                  "code": "LIT 3310",
+                  "title": "American Literature: Survey(s)",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "LIT 3373",
+                  "title": "British Literature: Survey(s)",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "LIT 3374",
+                  "title": "French Literature: Survey(s)",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "LIT 3375",
+                  "title": "Moroccan Literature: Survey(s)",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 3
+            }
+          },
+          "notes": [
+            "Students are required to take two writing classes and three literature courses from the following",
+            "10 Students minoring in African Studies must take PSC 2301 as part of their GenEd requirements. They may count HIS 1301, HIS 2301, HUM 1310, or"
+          ]
+        },
+        "Business Administration": {
+          "label": "Business Administration",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "ECO 2301",
+                  "title": "Microeconomics",
+                  "details": "(Prerequisite: MTH 1304 or MTH 1305 or MTH 1311)",
+                  "credits": 3
+                },
+                {
+                  "code": "ECO 2302",
+                  "title": "Macroeconomics",
+                  "details": "(Prerequisite: ECO 2301)",
+                  "credits": 3
+                },
+                {
+                  "code": "ACC 2301",
+                  "title": "Accounting Principles I",
+                  "details": "(Prerequisite: MTH 1304 or MTH 1305 or MTH 1311)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "FIN 3301",
+                  "title": "Principles of Finance",
+                  "details": "(Prerequisites: ACC 2301 and ECO 2302)",
+                  "credits": 3
+                },
+                {
+                  "code": "GBU 3302",
+                  "title": "Business Law and Ethics",
+                  "details": "(Prerequisite: Junior Classification)",
+                  "credits": 3
+                },
+                {
+                  "code": "MIS 3301",
+                  "title": "Management Information Systems",
+                  "details": "(Prerequisites: CSC 1400 and MGT 3301)",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 3301",
+                  "title": "Principles of Management",
+                  "details": "(Prerequisites: ACC 2301 and ECO 2302)",
+                  "credits": 3
+                },
+                {
+                  "code": "MKT 3301",
+                  "title": "Principles of Marketing",
+                  "details": "(Prerequisites: ACC 2301 and ECO 2302)",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2,
+              "rule": "In addition, students must complete two courses from the following"
+            }
+          }
+        },
+        "Computer Science": {
+          "label": "Computer Science",
+          "credits": 15,
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "CSC 2302",
+                  "title": "Data Structures",
+                  "details": "(Prerequisite: CSC 1401)",
+                  "credits": 3
+                },
+                {
+                  "code": "CSC 2303",
+                  "title": "Advanced Programming",
+                  "details": "(Prerequisite: CSC 2302)",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Course Options",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "CSC 3324",
+                  "title": "Software Engineering",
+                  "details": "(Prerequisite: CSC 2302)",
+                  "credits": 3
+                },
+                {
+                  "code": "CSC 3326",
+                  "title": "Database Systems",
+                  "details": "(Prerequisite: CSC 3324)",
+                  "credits": 3
+                },
+                {
+                  "code": "CSC 2304",
+                  "title": "Computer Architecture",
+                  "details": "(Prerequisites: CSC 2302 and EGR 3331)",
+                  "credits": 3
+                },
+                {
+                  "code": "CSC 33XX",
+                  "title": "Any advanced (3000-level) CSC course",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2,
+              "rule": "In addition, students must complete two courses from the following"
+            }
+          },
+          "notes": [
+            "CSC 1401 is a prerequisite for CSC 2302. Take CSC 1401 instead of CSC 1300 when minoring in Computer Science. The required-course heading lists 9 SCH and the two courses in that block total 6 SCH."
+          ]
+        }
+      }
+    },
+    "freeElectives": {
+      "label": "Electives",
+      "credits": 9,
+      "courses": [
+        {
+          "requirement": "Free Elective 1",
+          "credits": 3
+        },
+        {
+          "requirement": "Free Elective 2",
+          "credits": 3
+        },
+        {
+          "requirement": "Free Elective 3",
+          "credits": 3
+        }
+      ],
+      "groups": {},
+      "notes": [
+        "Communication Studies students are required to take three electives in any area of interest in consultation with their academic advisors.",
+        "11 GBU 3302 cannot be taken on exchange.",
+        "12 CSC 1401 is a prerequisite to CSC 2302. Students minoring in Computer Science must take CSC 1401 instead of CSC 1300."
+      ]
+    }
+  }
+}

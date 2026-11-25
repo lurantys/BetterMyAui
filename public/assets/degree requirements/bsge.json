@@ -1,0 +1,471 @@
+{
+  "program": "BSGE",
+  "name": "General Engineering",
+  "catalog": "2023-2025",
+  "source": "BSGE_Course-Sequence_Catalog 2023-2025_Oct_2023.pdf",
+  "totalCredits": 136,
+  "requirements": {
+    "generalEducation": {
+      "label": "General Education (GenEd)",
+      "credits": 30,
+      "courses": [],
+      "groups": {
+        "First Year Experience": {
+          "label": "First Year Experience",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FYE 1101",
+              "title": "First Year Experience",
+              "credits": 1
+            },
+            {
+              "code": "FYE 1102",
+              "title": "First Year Experience",
+              "credits": 1
+            }
+          ],
+          "groups": {}
+        },
+        "Foundations for Academic Success": {
+          "label": "Foundations for Academic Success",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FAS 0210",
+              "title": "Strategic Academic Skills",
+              "credits": 0
+            },
+            {
+              "code": "FAS 1220",
+              "title": "Introduction to Critical Thinking",
+              "credits": 2
+            }
+          ],
+          "groups": {}
+        },
+        "English": {
+          "label": "English",
+          "credits": 6,
+          "courses": [
+            {
+              "code": "ENG 1301",
+              "title": "English Composition I",
+              "credits": 3
+            },
+            {
+              "code": "ENG 2303",
+              "title": "Technical Writing",
+              "credits": 3
+            }
+          ],
+          "groups": {}
+        },
+        "Communication": {
+          "label": "Communication",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "COM 1301",
+              "title": "Public Speaking",
+              "credits": 3
+            }
+          ],
+          "groups": {}
+        },
+        "Arabic": {
+          "label": "Arabic",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "ARA 1201"
+            },
+            {
+              "code": "ARA 1202"
+            },
+            {
+              "code": "ARA 1203"
+            },
+            {
+              "code": "ARA 3299"
+            },
+            {
+              "code": "ARB 1201"
+            },
+            {
+              "code": "ARB 1202"
+            },
+            {
+              "code": "ARB 1203"
+            },
+            {
+              "code": "ARB 1241"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "French": {
+          "label": "French",
+          "credits": 2,
+          "courses": [
+            {
+              "code": "FRN 3210"
+            }
+          ],
+          "groups": {},
+          "rule": "French exit level for holders of the Moroccan baccalaureate. See placement notes."
+        },
+        "Humanities": {
+          "label": "Humanities",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "HUM 2305"
+            },
+            {
+              "code": "HUM 2306"
+            },
+            {
+              "code": "HUM 2307"
+            },
+            {
+              "code": "LIT 2301"
+            },
+            {
+              "code": "PHI 2301"
+            },
+            {
+              "code": "PHI 2302"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "History or Political Science": {
+          "label": "History or Political Science",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "HIS 1301"
+            },
+            {
+              "code": "HIS 2301"
+            },
+            {
+              "code": "HUM 1310"
+            },
+            {
+              "code": "HUM 2302"
+            },
+            {
+              "code": "PSC 2301"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Social Sciences": {
+          "label": "Social Sciences",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "ECO 1300"
+            },
+            {
+              "code": "GEO 1301"
+            },
+            {
+              "code": "PSY 1301"
+            },
+            {
+              "code": "SOC 1301"
+            },
+            {
+              "code": "SSC 1310"
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Art Appreciation & Creation": {
+          "label": "Art Appreciation & Creation",
+          "credits": 3,
+          "courses": [
+            {
+              "code": "ART 1301",
+              "title": "Music & Vocal Performance"
+            },
+            {
+              "code": "ART 1302",
+              "title": "Dance & Choreography"
+            },
+            {
+              "code": "ART 1303",
+              "title": "Painting & Sculpture"
+            },
+            {
+              "code": "ART 1304",
+              "title": "Drama & Theater"
+            },
+            {
+              "code": "ART 1305",
+              "title": "Art Appreciation"
+            },
+            {
+              "code": "ART 1399",
+              "title": "Special Topics in Arts: …………."
+            },
+            {
+              "code": "ENG 2320",
+              "title": "Creative Writing"
+            },
+            {
+              "code": "HUM 2301",
+              "title": "Islamic Art & Architecture"
+            },
+            {
+              "code": "COM 2327",
+              "title": "Art & Design Production",
+              "details": "Requires COM 2403 as prerequisite or corequisite."
+            },
+            {
+              "code": "LIT 3370",
+              "title": "Aesthetics",
+              "details": "Requires Junior Classification."
+            }
+          ],
+          "groups": {},
+          "choose": 1
+        },
+        "Civic Engagement": {
+          "label": "Civic Engagement",
+          "credits": 1,
+          "courses": [
+            {
+              "code": "SLP 1101"
+            }
+          ],
+          "groups": {},
+          "choose": 1,
+          "options": [
+            "Service-learning course",
+            "CIP"
+          ]
+        }
+      },
+      "notes": [
+        "Notes",
+        "○ Several of the topics within the GenEd Program (41 SCH) are met by required courses in Areas 1, 2, and 3 of the BS programs in SSE (mathematics, computer science, basic science). The remaining",
+        "topical areas (30 SCH) that satisfy the GenEd are listed in Area 4.",
+        "(a) FAS 0210 is a non-degree credit-bearing course, and it is a graduation requirement. It counts for 2 non-degree credits, i.e. they do not count towards the degree. However, this course can be waived",
+        "upon a successful test out.",
+        "(b) ECO 1300: requires no Course Prerequisites/ Co-Requisites (Catalog 2017-2019 p. 205). This course is designed only for students that are NOT majoring or minoring in Business Administration or Human",
+        "Resource development. Therefore, it cannot serve as a substitute for ECO 2301 or ECO 2302. However, students that are eligible to take this course may also take it as an elective course (Catalog 2017-",
+        "2019 p. 120).",
+        "(c) Art Appreciation & Creation:",
+        "(d) All degree-seeking students must earn 2 SCH of Arabic language by taking one course from the list. Arabic courses are categorized depend ing on the student’s high school diploma and prior Arabic",
+        "proficiency level.",
+        "▪ Holders of the Moroccan baccalaureate take ARB 1241 without placement.",
+        "▪ Holders of a cultural mission baccalaureate in Morocco (French, Spanish, etc.) take one ARB course based on placement test results.",
+        "▪ Holders of international high school degrees with no prior Arabic language instruction take one ARA course based on placement test results.",
+        "(e) Holders of the Moroccan baccalaureate must earn 2 SCH of French language by taking FRN 3210 as an exit level. Every newly adm itted student is required to take a free international official French",
+        "placement test TEF (Test d’Evaluation de Français) in order to determine how many courses in French he/she needs to take and at what level. If based on TEF placement test results students have to take",
+        "additional French courses as prerequisites, the latter will not count towards the degree. Students may not take French in their first semester of study, and they can also be exempted upon earning a",
+        "minimum of C1 in TEF and 16 in GAT. International students with no prior knowledge of French may choose to take Spanish to sa tisfy GenEd language requirements.",
+        "(f) A course with an SL component must be taken as co-requisites. Failing the course will de facto result in failing the SL component, too. Failing the SL component will result in an NRP in the SL component",
+        "only. Students who fail the SL component must enroll in another course from their degree plan with an SL component in the subsequent semesters. (e.g. EGR 3331 SL)",
+        "(g) In case no subsequent course in the student’s degree plan is offered with an SL (Service Learning) component, he/she must submit an SL proposal to the SLP Committee and enroll in SLP 1101.",
+        "(j) EGR 4300 may be combined with EGR 4402 for 7 SCH with approval (Catalog 2021-2023, page 240)."
+      ]
+    },
+    "commonCore": {
+      "label": "Mathematics and Basic Sciences",
+      "credits": 31,
+      "courses": [
+        {
+          "code": "MTH 1303",
+          "title": "Calculus I: Differential and Integral Calculus",
+          "credits": 3
+        },
+        {
+          "code": "MTH 2301",
+          "title": "Multivariable Calculus",
+          "credits": 3
+        },
+        {
+          "code": "MTH 2320",
+          "title": "Linear Algebra",
+          "credits": 3
+        },
+        {
+          "code": "MTH 3301",
+          "title": "Probability and Statistics for Engineers",
+          "credits": 3
+        },
+        {
+          "code": "MTH 2304",
+          "title": "Differential Equations",
+          "credits": 3
+        },
+        {
+          "code": "PHY 1401",
+          "title": "Physics I",
+          "credits": 4
+        },
+        {
+          "code": "PHY 1402",
+          "title": "Physics II",
+          "credits": 4
+        },
+        {
+          "code": "CHE 1401",
+          "title": "Chemistry I",
+          "credits": 4
+        },
+        {
+          "code": "CHE 1402",
+          "title": "Chemistry II",
+          "credits": 4
+        }
+      ],
+      "groups": {}
+    },
+    "majorCore": {
+      "label": "Engineering Core",
+      "credits": 57,
+      "courses": [
+        {
+          "code": "CSC 1402",
+          "title": "Computer Programming for Engineers",
+          "credits": 4
+        },
+        {
+          "code": "EGR 2201",
+          "title": "Introduction to Engineering and Design",
+          "credits": 2
+        },
+        {
+          "code": "EGR 2210",
+          "title": "Computer Aided Engineering",
+          "credits": 2
+        },
+        {
+          "code": "EGR 2302",
+          "title": "Engineering Economics",
+          "credits": 3
+        },
+        {
+          "code": "EGR 2402",
+          "title": "Electric Circuits",
+          "credits": 4
+        },
+        {
+          "code": "EGR 3302",
+          "title": "Thermodynamics",
+          "credits": 3
+        },
+        {
+          "code": "EGR 3304",
+          "title": "Materials Science",
+          "credits": 3
+        },
+        {
+          "code": "CSC 3308",
+          "title": "Data Analysis (with Python)",
+          "credits": 3
+        },
+        {
+          "code": "EGR 4300",
+          "title": "Internship",
+          "credits": 3
+        },
+        {
+          "code": "EGR 4402",
+          "title": "Capstone Design",
+          "credits": 4
+        },
+        {
+          "code": "EGR 2301",
+          "title": "Statics"
+        },
+        {
+          "code": "EGR 2311",
+          "title": "Dynamics"
+        },
+        {
+          "code": "EGR 2412",
+          "title": "Mechanics of Materials"
+        },
+        {
+          "code": "EGR 3331",
+          "title": "Digital Design"
+        },
+        {
+          "code": "EGR 3305",
+          "title": "Signals & Systems"
+        },
+        {
+          "code": "EGR 3310",
+          "title": "Micro-Controllers"
+        },
+        {
+          "code": "EGR 3401",
+          "title": "Fluid Mechanics"
+        },
+        {
+          "code": "EGR 3306",
+          "title": "Engineering Instrumentation & Mechatronics"
+        }
+      ],
+      "groups": {}
+    },
+    "majorElectives": null,
+    "concentrations": {
+      "label": "Engineering Thematic Area",
+      "credits": 12,
+      "courses": [
+        {
+          "requirement": "Engineering Thematic Area Course 1",
+          "credits": 3
+        },
+        {
+          "requirement": "Engineering Thematic Area Course 2",
+          "credits": 3
+        },
+        {
+          "requirement": "Engineering Thematic Area Course 3",
+          "credits": 3
+        },
+        {
+          "requirement": "Engineering Thematic Area Course 4",
+          "credits": 3
+        }
+      ],
+      "groups": {},
+      "options": [
+        "Mechatronics",
+        "BioTech",
+        "Aeronautics",
+        "Manufacturing and Logistics Engineering"
+      ],
+      "rule": "Choose a thematic area and complete its course slots."
+    },
+    "minors": null,
+    "freeElectives": {
+      "label": "Free Electives",
+      "credits": 6,
+      "courses": [
+        {
+          "requirement": "Free Elective 1",
+          "credits": 3
+        },
+        {
+          "requirement": "Free Elective 2",
+          "credits": 3
+        }
+      ],
+      "groups": {}
+    }
+  }
+}

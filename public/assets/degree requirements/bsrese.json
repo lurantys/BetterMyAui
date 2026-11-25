@@ -1,0 +1,474 @@
+{
+  "program": "BSRESE",
+  "name": "Renewable Energy Systems Engineering",
+  "catalog": "2019-2021",
+  "source": "2019-2021 BSRESE Table.pdf",
+  "totalCredits": 135,
+  "requirements": {
+    "generalEducation": {
+      "label": "General Education (GenEd) Program",
+      "credits": 30,
+      "courses": [
+        {
+          "credits": 2,
+          "requirement": "Arabic",
+          "choose": 1,
+          "courses": [
+            {
+              "code": "ARA 1201"
+            },
+            {
+              "code": "ARA 1202"
+            },
+            {
+              "code": "ARA 1203"
+            },
+            {
+              "code": "ARA 3299"
+            },
+            {
+              "code": "ARB 1201"
+            },
+            {
+              "code": "ARB 1202"
+            },
+            {
+              "code": "ARB 1203"
+            },
+            {
+              "code": "ARB 1241"
+            }
+          ],
+          "semester": 1
+        },
+        {
+          "code": "ENG 1301",
+          "title": "English Composition I",
+          "credits": 3,
+          "semester": 1
+        },
+        {
+          "code": "FAS 0210",
+          "title": "Foundations for Academic Success: Strategic Academic Skills",
+          "credits": 0,
+          "semester": 1
+        },
+        {
+          "code": "FYE 1101",
+          "title": "First Year Experience",
+          "credits": 1,
+          "semester": 1
+        },
+        {
+          "code": "COM 1301",
+          "title": "Public Speaking",
+          "credits": 3,
+          "semester": 2
+        },
+        {
+          "code": "FAS 1220",
+          "title": "Foundations for Academic Success: Introduction to Critical Thinking",
+          "credits": 2,
+          "semester": 2
+        },
+        {
+          "code": "FYE 1102",
+          "title": "First Year Experience",
+          "credits": 1,
+          "semester": 2
+        },
+        {
+          "code": "ENG 2303",
+          "title": "Technical Writing",
+          "credits": 3,
+          "semester": 3
+        },
+        {
+          "credits": 3,
+          "requirement": "Humanities",
+          "choose": 1,
+          "courses": [
+            {
+              "code": "HUM 2305"
+            },
+            {
+              "code": "HUM 2306"
+            },
+            {
+              "code": "HUM 2307"
+            },
+            {
+              "code": "LIT 2301"
+            },
+            {
+              "code": "PHI 2301"
+            },
+            {
+              "code": "PHI 2302"
+            }
+          ],
+          "semester": 4
+        },
+        {
+          "credits": 2,
+          "requirement": "French",
+          "courses": [
+            {
+              "code": "FRN 3210"
+            }
+          ],
+          "semester": 5
+        },
+        {
+          "credits": 3,
+          "requirement": "Art Appreciation & Creation",
+          "choose": 1,
+          "courses": [
+            {
+              "code": "ART 1301"
+            },
+            {
+              "code": "ART 1302"
+            },
+            {
+              "code": "ART 1303"
+            },
+            {
+              "code": "ART 1304"
+            },
+            {
+              "code": "ART 1305"
+            },
+            {
+              "code": "ART 3399"
+            },
+            {
+              "code": "ENG 2320"
+            },
+            {
+              "code": "HUM 2301"
+            },
+            {
+              "code": "COM 2327"
+            },
+            {
+              "code": "LIT 3370"
+            }
+          ],
+          "semester": 6
+        },
+        {
+          "credits": 3,
+          "requirement": "History or Political Science",
+          "choose": 1,
+          "courses": [
+            {
+              "code": "HIS 1301"
+            },
+            {
+              "code": "HIS 2301"
+            },
+            {
+              "code": "HUM 1310"
+            },
+            {
+              "code": "HUM 2302"
+            },
+            {
+              "code": "PSC 2301"
+            }
+          ],
+          "semester": 7
+        },
+        {
+          "credits": 1,
+          "requirement": "Civic Engagement",
+          "choose": 1,
+          "courses": [
+            {
+              "code": "SLP 1101"
+            }
+          ],
+          "options": [
+            "Service-learning course"
+          ],
+          "semester": 8
+        },
+        {
+          "credits": 3,
+          "requirement": "Social Sciences",
+          "choose": 1,
+          "courses": [
+            {
+              "code": "ECO 1300"
+            },
+            {
+              "code": "GEO 1301"
+            },
+            {
+              "code": "PSY 1301"
+            },
+            {
+              "code": "SOC 1301"
+            },
+            {
+              "code": "SSC 1310"
+            }
+          ],
+          "semester": 8
+        }
+      ],
+      "groups": {}
+    },
+    "commonCore": {
+      "label": "Common Core",
+      "credits": 30,
+      "courses": [],
+      "groups": {
+        "Mathematics Requirements": {
+          "label": "Mathematics Requirements",
+          "credits": 15,
+          "courses": [
+            {
+              "code": "MTH 1303",
+              "title": "Calculus I: Differential and Integral Calculus",
+              "credits": 3,
+              "semester": 1
+            },
+            {
+              "code": "MTH 2301",
+              "title": "Multivariable Calculus",
+              "credits": 3,
+              "semester": 2
+            },
+            {
+              "code": "MTH 2320",
+              "title": "Linear Algebra",
+              "credits": 3,
+              "semester": 3
+            },
+            {
+              "code": "MTH 3301",
+              "title": "Probability and Statistics for Engineers",
+              "credits": 3,
+              "semester": 3
+            },
+            {
+              "code": "MTH 2304",
+              "title": "Differential Equations",
+              "credits": 3,
+              "semester": 4
+            }
+          ],
+          "groups": {}
+        },
+        "Basic Sciences Requirements": {
+          "label": "Basic Sciences Requirements",
+          "credits": 15,
+          "courses": [
+            {
+              "code": "PHY 1401",
+              "title": "Physics I",
+              "credits": 4,
+              "semester": 2
+            },
+            {
+              "code": "PHY 1402",
+              "title": "Physics II",
+              "credits": 4,
+              "semester": 3
+            },
+            {
+              "code": "CHE 1401",
+              "title": "Chemistry I",
+              "credits": 4,
+              "semester": 4
+            },
+            {
+              "code": "CHE 1302",
+              "title": "Chemistry II",
+              "credits": 3,
+              "semester": 5
+            }
+          ],
+          "groups": {}
+        }
+      }
+    },
+    "majorCore": {
+      "label": "Major Core",
+      "credits": 69,
+      "courses": [],
+      "groups": {
+        "General Engineering Core and Elective Requirements": {
+          "label": "General Engineering Core and Elective Requirements",
+          "credits": 54,
+          "courses": [
+            {
+              "code": "CSC 1402",
+              "title": "Computer Programming for Engineers",
+              "credits": 4,
+              "semester": 1
+            },
+            {
+              "code": "CSC 2309",
+              "title": "Data Analysis (with Phyton)",
+              "credits": 3,
+              "semester": 2
+            },
+            {
+              "code": "EGR 2201",
+              "title": "Introduction to Engineering and Design",
+              "credits": 2,
+              "semester": 3
+            },
+            {
+              "code": "EGR 2301",
+              "title": "Statics",
+              "credits": 3,
+              "semester": 3
+            },
+            {
+              "code": "EGR 2210",
+              "title": "Computer Aided Engineering",
+              "credits": 2,
+              "semester": 4
+            },
+            {
+              "code": "EGR 3331",
+              "title": "Digital Design",
+              "credits": 3,
+              "semester": 4
+            },
+            {
+              "code": "EGR 2302",
+              "title": "Engineering Economics",
+              "credits": 3,
+              "semester": 5
+            },
+            {
+              "code": "EGR 2311",
+              "title": "Dynamics",
+              "credits": 3,
+              "semester": 5
+            },
+            {
+              "code": "EGR 2402",
+              "title": "Electric Circuits",
+              "credits": 4,
+              "semester": 5
+            },
+            {
+              "code": "EGR 3302",
+              "title": "Thermodynamics",
+              "credits": 3,
+              "semester": 6
+            },
+            {
+              "code": "EGR 3304",
+              "title": "Materials Science",
+              "credits": 3,
+              "semester": 6
+            },
+            {
+              "code": "EGR 3305",
+              "title": "Signals & Systems",
+              "credits": 3,
+              "semester": 6
+            },
+            {
+              "code": "EGR 3301",
+              "title": "Fluid Mechanics",
+              "credits": 3,
+              "semester": 7
+            },
+            {
+              "code": "EGR 3306",
+              "title": "Engineering Instrumentation & Mechatronics",
+              "credits": 3,
+              "semester": 7
+            },
+            {
+              "requirement": "Engineering Elective",
+              "credits": 3,
+              "semester": 7
+            },
+            {
+              "code": "EGR 4300",
+              "title": "Internship",
+              "credits": 3,
+              "semester": 8
+            },
+            {
+              "code": "EGR 4402",
+              "title": "Capstone Design",
+              "credits": 4,
+              "semester": 8
+            },
+            {
+              "requirement": "Engineering Elective",
+              "credits": 2,
+              "semester": 8
+            }
+          ],
+          "groups": {}
+        },
+        "Renewable Energy Major": {
+          "label": "Renewable Energy Major",
+          "credits": 15,
+          "courses": [
+            {
+              "requirement": "Renewable Energy Elective I",
+              "credits": 3,
+              "semester": 6
+            },
+            {
+              "code": "RES 4315",
+              "title": "Energy Management",
+              "credits": 3,
+              "semester": 6
+            },
+            {
+              "requirement": "Renewable Energy Elective II",
+              "credits": 3,
+              "semester": 7
+            },
+            {
+              "code": "RES 4323",
+              "title": "Energy Distribution Systems",
+              "credits": 3,
+              "semester": 7
+            },
+            {
+              "code": "RES 4325",
+              "title": "Renewable Energy Technologies",
+              "credits": 3,
+              "semester": 8
+            }
+          ],
+          "groups": {}
+        }
+      }
+    },
+    "majorElectives": null,
+    "concentrations": null,
+    "minors": null,
+    "freeElectives": {
+      "label": "Free Electives",
+      "credits": 6,
+      "courses": [
+        {
+          "requirement": "Free Elective",
+          "credits": 3,
+          "semester": 5
+        },
+        {
+          "requirement": "Free Elective",
+          "credits": 3,
+          "semester": 7
+        }
+      ],
+      "groups": {}
+    }
+  }
+}
