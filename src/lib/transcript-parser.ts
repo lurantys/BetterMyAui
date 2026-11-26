@@ -1,6 +1,6 @@
-import * as pdfjsLib from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.min.mjs", import.meta.url).href;
 
 export interface ParsedCourse {
   code: string;
@@ -94,21 +94,26 @@ export async function parseTranscript(file: File): Promise<ParsedSemester[]> {
   }
 
   const buffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const task = pdfjsLib.getDocument({ data: buffer });
   const items: TextItem[] = [];
 
-  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-    const page = await pdf.getPage(pageNumber);
-    const content = await page.getTextContent();
-    for (const item of content.items) {
-      if (!("str" in item) || !item.str.trim()) continue;
-      items.push({
-        str: item.str.trim(),
-        x: item.transform[4],
-        y: item.transform[5],
-        page: pageNumber,
-      });
+  try {
+    const pdf = await task.promise;
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      for (const item of content.items) {
+        if (!("str" in item) || !item.str.trim()) continue;
+        items.push({
+          str: item.str.trim(),
+          x: item.transform[4],
+          y: item.transform[5],
+          page: pageNumber,
+        });
+      }
     }
+  } finally {
+    await task.destroy();
   }
 
   const lines = buildLines(items);

@@ -1043,7 +1043,7 @@ export default function CareerPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,application/pdf"
                     onChange={handleFileUpload}
                     className="hidden"
                   />
