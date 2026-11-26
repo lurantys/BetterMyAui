@@ -1,3 +1,5 @@
+import { StyledSelect, type SelectOption } from "@/components/ui/styled-select";
+
 const TIME_SLOTS = [
   "08:00", "08:10", "08:20", "08:30", "08:40", "08:50",
   "09:00", "09:10", "09:20", "09:30", "09:40", "09:50",
@@ -58,28 +60,27 @@ export function ScheduleTimeFields({ start, end, days, optional = false, onChang
   optional?: boolean;
   onChange: (start: string, end: string) => void;
 }) {
-  const selectClass = "mt-1 block h-9 w-full rounded-md border border-input bg-card px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-  const options = (value: string, slots: string[]) =>
-    [...new Set([...slots, ...(value ? [value] : [])])].sort();
+  function options(value: string, slots: string[], invalid?: (time: string) => boolean): SelectOption[] {
+    return [
+      ...(optional || !value ? [{ value: "", label: "Time not set" }] : []),
+      ...[...new Set([...slots, ...(value ? [value] : [])])].sort()
+        .map((time) => ({ value: time, label: formatTime12(time), disabled: invalid?.(time) })),
+    ];
+  }
 
+  const beforeStart = (time: string) => timeToMinutes(time) <= timeToMinutes(start);
   return (
     <div className="grid grid-cols-2 gap-3">
-      <label className="text-xs font-medium text-muted-foreground">
+      <label className="grid gap-1 text-xs font-medium text-muted-foreground">
         Start time
-        <select className={selectClass} value={start} onChange={(event) => {
-          const next = event.target.value;
-          onChange(next, next ? getEndTimeForStart(next, days) : "");
-        }}>
-          {(optional || !start) && <option value="">Time not set</option>}
-          {options(start, TIME_SLOTS.slice(0, -1)).map((time) => <option key={time} value={time}>{formatTime12(time)}</option>)}
-        </select>
+        <StyledSelect label="Start time" value={start} options={options(start, TIME_SLOTS.slice(0, -1))}
+          onValueChange={(next) => onChange(next, next ? getEndTimeForStart(next, days) : "")} />
       </label>
-      <label className="text-xs font-medium text-muted-foreground">
+      <label className="grid gap-1 text-xs font-medium text-muted-foreground">
         End time
-        <select className={selectClass} value={end} disabled={!start} onChange={(event) => onChange(start, event.target.value)}>
-          {(optional || !end) && <option value="">Time not set</option>}
-          {options(end, TIME_SLOTS.filter((time) => timeToMinutes(time) > timeToMinutes(start))).map((time) => <option key={time} value={time} disabled={timeToMinutes(time) <= timeToMinutes(start)}>{formatTime12(time)}</option>)}
-        </select>
+        <StyledSelect label="End time" value={end} disabled={!start}
+          options={options(end, TIME_SLOTS.filter((time) => !beforeStart(time)), beforeStart)}
+          onValueChange={(next) => onChange(start, next)} />
       </label>
     </div>
   );

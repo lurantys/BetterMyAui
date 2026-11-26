@@ -8,6 +8,8 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import type { DegreePlan } from "@/lib/degree-planner";
+import { mergeDegreePlan } from "@/lib/save-degree-plan";
 import { Button } from "@/components/ui/button";
 import { calculateCumulativeGpa, calculateGpaTotals, calculateTotalCredits, generateId, getCourseColor, getSemesterStatus, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
 
@@ -84,6 +86,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [degreeDraft, setDegreeDraft] = useState<{ plans: DegreePlan[]; context: string } | null>(null);
   const [proposal, setProposal] = useState<ProposedChange[] | null>(null);
   const replyContexts = useRef(new WeakMap<Message, string>());
   const proposalContext = useRef<string | null>(null);
@@ -104,7 +107,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     const { qualityPoints, gradedCredits } = calculateGpaTotals([...past, ...planned]);
     const plannedInProgressCredits = planned.flatMap(({ courses }) => courses).filter((course) => course.grade === null).reduce((sum, course) => sum + course.credits, 0);
     return JSON.stringify({
-      profile: profile ? { major: profile.major, minor: profile.minor } : null,
+      profile: profile ? { major: profile.major, minor: profile.minor, specialization: profile.specialization } : null,
       careerSummary: {
         cumulativeGpa: calculateCumulativeGpa([...past, ...planned]),
         cumulativeQualityPoints: qualityPoints,
@@ -172,6 +175,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     setInput("");
     setError("");
     setLoading(true);
+    setDegreeDraft(null);
     const studentContext = getStudentContext();
     const history = messages.filter((item) =>
       item.role === "user" || replyContexts.current.get(item) === studentContext
@@ -193,6 +197,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
         setError("Your Career data changed while the Advisor was responding. Send the message again to use the latest data.");
         return;
       }
+      if (Array.isArray(data.degreePlans)) setDegreeDraft({ plans: data.degreePlans, context: studentContext });
       if (!data.answer?.trim()) return;
       const reply: Message = { role: "assistant", content: data.answer };
       replyContexts.current.set(reply, studentContext);
@@ -265,6 +270,29 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     recognition.start();
   }
 
+  function applyDegreePlan(plan: DegreePlan) {
+    if (degreeDraft?.context !== getStudentContext()) {
+      setDegreeDraft(null);
+      setError("Your Career data changed. Generate a new degree plan before saving.");
+      return;
+    }
+    try {
+      const updated = mergeDegreePlan(plan, loadSchedules());
+      if (updated.added) {
+        saveSchedules(updated.schedules);
+        onSchedulesApplied?.(updated.schedules);
+      }
+      setDegreeDraft(null);
+      setError("");
+      const reply: Message = { role: "assistant", content: updated.added
+        ? `Added ${updated.added} courses to your planned semesters.` : "These courses are already in your plan." };
+      replyContexts.current.set(reply, getStudentContext());
+      setMessages((current) => [...current, reply]);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not save the degree plan.");
+    }
+  }
+
   function applyProposal() {
     const changes = proposal;
     if (!changes?.length) return;
@@ -287,7 +315,10 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     const profile = loadProfile() ?? { fullName: "Student", major: null, minor: null };
     for (const change of changes) {
       if (change.action === "set_major") {
-        if (change.value) profile.major = change.value;
+        if (change.value && profile.major !== change.value) {
+          profile.major = change.value;
+          profile.specialization = undefined;
+        }
         continue;
       }
       if (change.action === "set_minor") {
@@ -368,7 +399,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                 <h2 className="text-2xl font-semibold text-foreground">What would you like to plan?</h2>
                 <p className="mt-3 text-sm text-muted-foreground">Ask about courses, prerequisites, your major, or changes to your semesters.</p>
                 <div className="mt-7 flex flex-wrap justify-center gap-2">
-                  {["What courses should I consider next?", "Check prerequisites for my planned courses", "Suggest electives related to my major"].map((suggestion) => (
+                  {["What courses should I consider next?", "Check prerequisites for my planned courses", "Build a full degree plan"].map((suggestion) => (
                     <button key={suggestion} onClick={() => void sendMessage(undefined, suggestion)} className="rounded-full border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">{suggestion}</button>
                   ))}
                 </div>
@@ -381,6 +412,15 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                 </div>
               </div>
             ))}
+            {degreeDraft && degreeDraft.plans.some((plan) => plan.terms.length > 0) && (
+              <div className="flex flex-wrap gap-2">
+                {degreeDraft.plans.filter((plan) => plan.terms.length > 0).map((plan) => <Button
+                  key={plan.label} size="sm" variant="outline" disabled={!plan.canSave} onClick={() => applyDegreePlan(plan)}
+                >
+                  Save {plan.label.toLowerCase()} draft
+                </Button>)}
+              </div>
+            )}
             {proposal && proposal.length > 0 && (
               <div className="advisor-chat-enter w-full max-w-2xl rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
                 <h3 className="text-sm font-semibold text-foreground">Review your changes</h3>
@@ -419,7 +459,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
           {error && <p role="alert" className="px-5 pb-2 text-sm text-destructive">{error}</p>}
           <form onSubmit={(event) => void sendMessage(event)} className="relative mx-auto flex w-full max-w-3xl shrink-0 items-center gap-1 rounded-[1.8rem] border border-border bg-card px-2 py-2 shadow-lg shadow-black/5 transition focus-within:border-primary/50 sm:items-end sm:gap-2 sm:px-4 sm:py-3">
             {suggestions.length > 0 && !listening && (
-              <div id={suggestionId} role="listbox" aria-label="Course suggestions" className="absolute inset-x-0 bottom-full z-10 mb-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-lg">
+              <div id={suggestionId} role="listbox" aria-label="Course suggestions" className="motion-menu absolute inset-x-0 bottom-full z-10 mb-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-lg">
                 {suggestions.map((course, index) => (
                   <button key={course.code} id={`${suggestionId}-${index}`} type="button" role="option"
                     tabIndex={-1} aria-selected={index === activeSuggestion}

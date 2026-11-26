@@ -61,6 +61,7 @@ export interface StudentProfile {
   fullName: string;
   major: string | null;
   minor: string | null;
+  specialization?: string;
 }
 
 // --- Storage keys ---
@@ -198,6 +199,7 @@ export function loadProfile(): StudentProfile | null {
       fullName: typeof profile.fullName === "string" ? profile.fullName : "Student",
       major: typeof profile.major === "string" ? profile.major : null,
       minor: typeof profile.minor === "string" ? profile.minor : null,
+      specialization: typeof profile.specialization === "string" ? profile.specialization : undefined,
     };
   } catch {
     return null;

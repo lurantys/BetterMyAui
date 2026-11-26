@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   useMemo,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -17,6 +18,7 @@ import {
   GraduationCap,
   Upload,
 } from "lucide-react";
+import { ConcealedGpa, GpaEye } from "@/components/gpa-visibility";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   calculateCumulativeGpa,
@@ -204,7 +206,7 @@ export default function Home() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
 
-      <main className="flex min-h-0 flex-1 flex-col px-6 py-6 sm:px-10 sm:py-8">
+      <main className="motion-page flex min-h-0 flex-1 flex-col px-6 py-6 sm:px-10 sm:py-8">
         {!hydrated ? (
           <LoadingState />
         ) : hasData ? (
@@ -348,6 +350,7 @@ function CommandCenter({
   nextClass: NextClass | null;
   alerts: Array<{ course: string; prerequisite: string }>;
 }) {
+  const [showGpa, setShowGpa] = useState(false);
   return (
     <div className="mx-auto my-auto w-full max-w-5xl">
       <section className="flex flex-col items-center gap-6 border-b border-border/70 pb-8 text-center sm:pb-10">
@@ -384,13 +387,15 @@ function CommandCenter({
         <SummaryItem
           icon={<GraduationCap className="h-4 w-4" />}
           label="Cumulative GPA"
-          value={completedCredits > 0 ? cumulativeGpa.toFixed(2) : "—"}
+          value={<ConcealedGpa revealed={showGpa} value={completedCredits > 0 ? cumulativeGpa.toFixed(2) : "—"} />}
           detail={
             completedCredits > 0
               ? `${formatCredits(completedCredits)} completed`
               : "Add grades in My Career"
           }
-          href="/gpa"
+          action={() => setShowGpa((visible) => !visible)}
+          actionLabel={showGpa ? "Hide GPA" : "Show GPA"}
+          expanded={showGpa}
         />
         <SummaryItem
           icon={<BookOpen className="size-4" />}
@@ -427,23 +432,27 @@ function SummaryItem({
   value,
   detail,
   href,
+  action,
+  actionLabel,
+  expanded,
 }: {
   icon: ReactNode;
   label: string;
-  value: string;
+  value: ReactNode;
   detail: string;
-  href: string;
+  href?: string;
+  action?: () => void;
+  actionLabel?: string;
+  expanded?: boolean;
 }) {
-  return (
-    <Link
-      href={href}
-      className="group px-1 py-6 transition-colors hover:bg-accent/25 sm:px-6 lg:px-5"
-    >
+  const className = "group px-1 py-6 transition-colors hover:bg-accent/25 sm:px-6 lg:px-5";
+  const content = <>
       <div className="flex items-center gap-2 text-muted-foreground">
         <span className="text-primary">{icon}</span>
         <span className="text-xs font-medium uppercase tracking-[0.12em]">
           {label}
         </span>
+        {expanded !== undefined && <span className="ml-auto group-hover:text-foreground"><GpaEye revealed={expanded} /></span>}
       </div>
       <p className="mt-4 truncate text-lg font-semibold tracking-[-0.02em]">
         {value}
@@ -451,6 +460,10 @@ function SummaryItem({
       <p className="mt-1 text-xs text-muted-foreground transition-colors group-hover:text-foreground">
         {detail}
       </p>
-    </Link>
+    </>;
+  return href ? <Link href={href} className={className}>{content}</Link> : (
+    <button type="button" className={`${className} text-left`} onClick={action} aria-label={actionLabel} aria-expanded={expanded}>
+      {content}
+    </button>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { StyledSelect } from "@/components/ui/styled-select";
 import { ScheduleTimeFields, formatTime12, getEndTimeForStart, timeToMinutes } from "@/components/schedule-time-fields";
 import { CourseAutocompleteInput } from "@/components/course-autocomplete-input";
 
@@ -738,7 +739,7 @@ export default function CalendarPage() {
           </div>
         </aside>
 
-        <main className={`flex min-w-0 flex-col overflow-hidden bg-card ${mobile && showMobileCourses ? "shrink-0" : "flex-1"}`}>
+        <main className={`motion-page flex min-w-0 flex-col overflow-hidden bg-card ${mobile && showMobileCourses ? "shrink-0" : "flex-1"}`}>
           <div className="flex min-h-[58px] flex-wrap items-center gap-2 px-3 py-2 lg:flex-nowrap lg:gap-4 lg:px-5 lg:py-3">
             <div className="flex min-w-0 basis-full items-center gap-2 lg:flex-1 lg:gap-4">
               <h1 className="shrink-0 text-sm font-semibold tracking-[-0.01em] text-foreground">
@@ -779,22 +780,9 @@ export default function CalendarPage() {
                     <Plus className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <div className="ml-1 flex shrink-0 items-center gap-1 rounded-md bg-muted p-1">
-                    <select
-                      value={newTerm}
-                      onChange={(e) =>
-                        setNewTerm(
-                          e.target.value as "fall" | "spring" | "summer"
-                        )
-                      }
-                      className="h-7 rounded border-0 bg-transparent px-2 text-xs text-foreground outline-none"
-                    >
-                      {TERM_OPTIONS.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="motion-enter ml-1 flex shrink-0 items-center gap-1 rounded-md bg-muted p-1">
+                    <StyledSelect label="Term" value={newTerm} options={TERM_OPTIONS} compact triggerClassName="h-7 text-xs"
+                      onValueChange={(value) => setNewTerm(value as SemesterSchedule["term"])} />
                     <div className="flex items-center">
                       <button
                         onClick={() => setNewYear((y) => y - 1)}
@@ -855,7 +843,7 @@ export default function CalendarPage() {
           </div>
 
           {mobile && showMobileCourses ? null : activeSchedule ? (
-            <div className="min-h-0 flex-1 px-2 pb-2 lg:px-4 lg:pb-4">
+            <div className="motion-enter min-h-0 flex-1 px-2 pb-2 lg:px-4 lg:pb-4">
               <div className="calendar-container h-full overflow-hidden rounded-lg bg-background">
                 <FullCalendarWrapper key={mobile ? "day" : "week"} {...calendarOptions} />
               </div>
@@ -918,11 +906,11 @@ export default function CalendarPage() {
         const unmet = prereqStatus.get(ev.id);
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45"
+            className="motion-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/45"
             onClick={() => { setShowDetailModal(false); setDetailEventId(null); }}
           >
             <div
-              className="mx-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border/70 bg-card p-4 sm:mx-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
+              className="motion-dialog mx-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border/70 bg-card p-4 sm:mx-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-5 flex items-center justify-between">
@@ -1017,8 +1005,8 @@ export default function CalendarPage() {
 
       {/* Add/Edit Custom Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
-          <div className="mx-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border/70 bg-card p-4 sm:mx-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
+        <div className="motion-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/45">
+          <div className="motion-dialog mx-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border/70 bg-card p-4 sm:mx-4 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 {editingId ? "Edit Course" : "Add Course"}

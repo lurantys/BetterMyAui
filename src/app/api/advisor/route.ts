@@ -1,3 +1,7 @@
+import { createDegreePlan } from "@/lib/ai-degree-plan";
+import { additionalDegreeCourses, currentTerm, formatTerm, termIndex as degreeTermIndex, type StudentTerm } from "@/lib/degree-planner";
+import { coursePrerequisitesMet, withoutStanding } from "@/lib/prerequisites";
+import { countsTowardCourseLimit, MAX_COUNTED_COURSES, MAX_SEMESTER_CREDITS, semesterLoad } from "@/lib/semester-load";
 import { NextResponse } from "next/server";
 import catalogData from "../../../../data/catalog/aui_catalog_data.json";
 
@@ -18,6 +22,7 @@ interface Course {
   prerequisite_raw: string | null;
   prerequisite_courses: string[];
   corequisite_courses?: string[];
+  corequisite_raw?: string | null;
   description: string;
 }
 
@@ -78,10 +83,6 @@ function inferMajorFromConversation(history: { role: "user" | "assistant"; conte
   return null;
 }
 
-function withoutStanding(value: string): string {
-  return value.replace(/(?:\s*,\s*|\s+and\s+)?\b(?:freshman|sophomore|junior|senior)(?:\s+or\s+(?:freshman|sophomore|junior|senior))*\s+(?:classification|standing)\b/gi, "").trim();
-}
-
 function compactRequirements(value: unknown): unknown {
   if (typeof value === "string") return withoutStanding(value);
   if (Array.isArray(value)) return value.map(compactRequirements);
@@ -95,42 +96,6 @@ function compactRequirements(value: unknown): unknown {
     if (child !== undefined && child !== null) compact[key] = compactRequirements(child);
   }
   return compact;
-}
-
-function coursePrerequisitesMet(course: { prerequisite_courses?: string[]; prerequisites?: string[]; prerequisite_raw?: string | null; prerequisiteNotes?: string | null }, completedCodes: Set<string>): boolean {
-  const prerequisites = (course.prerequisite_courses ?? course.prerequisites ?? []).map((code) => code.replace(/\s+/g, "").toUpperCase());
-  if (!prerequisites.length) return true;
-  const raw = withoutStanding(course.prerequisite_raw ?? course.prerequisiteNotes ?? "");
-  const pathways = raw.split(/;\s*or\s+/i);
-  if (pathways.length > 1) {
-    const groups = pathways.map((pathway) =>
-      prerequisites.filter((code) => pathway.replace(/\s+/g, "").toUpperCase().includes(code))
-    );
-    if (groups.every((group) => group.length)) {
-      return groups.some((group) => group.every((code) => completedCodes.has(code)));
-    }
-  }
-  if (!/\bor\b/i.test(raw)) return prerequisites.every((code) => completedCodes.has(code));
-
-  const clauses = raw.split(",").map((part) => part.trim()).filter(Boolean);
-  if (clauses.length === 1) {
-    const parentheticalAlternatives = raw.match(/^\s*([A-Z]{2,5}\s*\d{4})\s*\(\s*or\s+((?:[A-Z]{2,5}\s*\d{4}\s*(?:or\s+)?)*)\)\s*$/i);
-    if (parentheticalAlternatives) return prerequisites.some((code) => completedCodes.has(code));
-    const alternatives = raw.split(/\bor\b/i);
-    const choices = alternatives.map((clause) => prerequisites.filter((code) => clause.replace(/\s+/g, "").toUpperCase().includes(code)));
-    if (choices.every((choice) => choice.length === 1) && !/\band\b/i.test(raw)) {
-      return choices.some(([code]) => completedCodes.has(code));
-    }
-    return prerequisites.every((code) => completedCodes.has(code));
-  }
-  return clauses.every((clause) => {
-    const normalizedClause = clause.replace(/\s+/g, "").toUpperCase();
-    const mentioned = prerequisites.filter((code) => normalizedClause.includes(code));
-    if (!mentioned.length) return true;
-    return /\bor\b/i.test(clause)
-      ? mentioned.some((code) => completedCodes.has(code))
-      : mentioned.every((code) => completedCodes.has(code));
-  });
 }
 
 function getCatalogMinorDefinitions(programs: DegreeRequirementNode[]) {
@@ -201,11 +166,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter a message under 4,000 characters." }, { status: 400 });
   }
 
-  let studentData: { profile?: { major?: string | null; minor?: string | null }; careerSummary?: { cumulativeGpa?: number; cumulativeQualityPoints?: number; cumulativeGpaCredits?: number; totalCareerCredits?: number; gradingScale?: { grade: string; points: number | null }[] }; currentSemester?: { term: string; year: number; courses?: { code: string; title?: string; credits?: number; grade?: string | null }[] } | null; plannedSemesters?: { term: string; year: number; courses?: { code: string; credits?: number; grade?: string | null }[] }[]; completedSemesters?: { term?: string; year?: number; courses?: { code: string; credits?: number; grade?: string | null }[] }[] } = {};
+  let studentData: { profile?: { major?: string | null; minor?: string | null; specialization?: string }; careerSummary?: { cumulativeGpa?: number; cumulativeQualityPoints?: number; cumulativeGpaCredits?: number; totalCareerCredits?: number; gradingScale?: { grade: string; points: number | null }[] }; currentSemester?: { term: string; year: number; courses?: { code: string; title?: string; credits?: number; grade?: string | null }[] } | null; plannedSemesters?: { term: string; year: number; courses?: { code: string; credits?: number; grade?: string | null }[] }[]; completedSemesters?: { term?: string; year?: number; courses?: { code: string; credits?: number; grade?: string | null }[] }[] } = {};
   try { studentData = JSON.parse(body.studentContext ?? "{}"); } catch {}
-  if (!apiKey) {
-    return NextResponse.json({ error: "Advisor is not configured. Add NVIDIA_API_KEY to .env.local and restart the app." }, { status: 503 });
-  }
   const degreePrograms = getDegreePrograms();
   const history = (body.history ?? []).slice(-10).filter((item) =>
     (item.role === "user" || item.role === "assistant") && typeof item.content === "string"
@@ -213,8 +175,37 @@ export async function POST(request: Request) {
   const statedMajor = inferMajorFromConversation(history, message);
   const effectiveMajor = studentData.profile?.major?.trim() || statedMajor;
   const degreeProgram = matchDegreeProgram(effectiveMajor, degreePrograms);
+  const degreeRequest = /\b(?:degree\s+plan|(?:plan|map)\b.{0,60}\b(?:rest of (?:my|the) degree|all (?:my |the )?(?:remaining |future )?semesters)|graduation\s+plan|(?:full|whole|entire|four.year|4.year)\s+(?:academic\s+)?(?:degree|graduation|study|course)\s*plan|plan\b.{0,70}\b(?:until|through)\s+(?:I\s+)?graduat(?:e|ion)|(?:plan|map)\b.{0,70}\b(?:remaining|all future)\s+semesters)\b/i;
+  const lastDegreeRequest = [...history].reverse().find(({ role, content }) => role === "user" && degreeRequest.test(content));
+  if (degreeRequest.test(message) || (lastDegreeRequest && /^(?:and |also |can (?:you|we) |what if (?:i|we) )?(?:include|exclude|skip|use|try|make|aim|finish|graduate|compare|favor|balance|choose|specialize)\b/i.test(message) && !/\b(?:recommend|next|this) (?:semester|term|courses?)\b/i.test(message))) {
+    if (!degreeProgram) return NextResponse.json({ answer: "Set a supported major in My Career to generate a degree plan." });
+    const semesters = [
+      ...(studentData.completedSemesters ?? []),
+      ...(studentData.plannedSemesters ?? []),
+      ...(studentData.currentSemester ? [studentData.currentSemester] : []),
+    ].filter((term): term is typeof term & Pick<StudentTerm, "year" | "term"> =>
+      !!term && typeof term.year === "number" && ["spring", "summer", "fall"].includes(term.term ?? ""))
+      .map((term) => ({ term: term.term, year: term.year, courses: (term.courses ?? []).map((course) => ({ ...course, credits: course.credits ?? 0 })) }));
+    const result = await createDegreePlan({
+      major: degreeProgram.name, minor: studentData.profile?.minor, specialization: studentData.profile?.specialization, semesters,
+    }, degreeRequest.test(message) ? message : `${message}\nPrior request: ${lastDegreeRequest?.content}`);
+    const variants = result.plans.filter((plan, index) => index === 0 || /\bcompar/i.test(message));
+    const reply = variants.map((plan) => [
+      `### ${plan.label}`,
+      plan.finish ? `Projected finish: **${plan.finish}**${plan.withinTarget ? "" : " (after target)"}` : "Projected finish pending requirement review.",
+      ...plan.terms.map((term) => `- **${formatTerm(term)}** | ${term.credits} credits | ${term.counted} counted courses | ${term.courses.map(({ code }) => code).join(", ")}`),
+      plan.remaining.length ? `**Still unresolved:** ${plan.remaining.join("; ")}` : "",
+      plan.review.length ? `**Review:** ${plan.review.join(" ")}` : "",
+    ].filter(Boolean).join("\n\n")).join("\n\n");
+    return NextResponse.json({ degreePlans: variants, answer: `**Target: ${result.deadline}**\n\n${reply}\n\n${result.assumptions} ${result.note}\n\n[Open the degree audit and workload comparison](/degree-plan)` });
+  }
+  if (!apiKey) {
+    return NextResponse.json({ error: "Advisor is not configured. Add NVIDIA_API_KEY to .env.local and restart the app." }, { status: 503 });
+  }
   const catalogMinorDefinitions = getCatalogMinorDefinitions(degreePrograms);
-  const savedSemesters = [...(studentData.completedSemesters ?? []), ...(studentData.plannedSemesters ?? [])];
+  const today = degreeTermIndex(currentTerm());
+  const savedSemesters = [...(studentData.completedSemesters ?? []), ...(studentData.plannedSemesters ?? [])]
+    .filter(({ term, year }) => !term || !year || year * 3 + ({ spring: 0, summer: 1, fall: 2 }[term] ?? 0) <= today);
   const completedCodes = savedSemesters.flatMap((semester) => semester.courses ?? [])
     .filter((course) => course.grade && !["F", "W", "I", "NG", "WIP"].includes(course.grade.toUpperCase()))
     .map((course) => course.code);
@@ -246,13 +237,17 @@ export async function POST(request: Request) {
     requirements: compactRequirements(degreeProgram.requirements),
   } : null;
 
-  const catalog = getCatalog().courses;
+  const catalog: Course[] = [
+    ...getCatalog().courses,
+    ...(degreeProgram ? additionalDegreeCourses(degreeProgram.name, studentData.profile?.minor, studentData.profile?.specialization)
+      .map((course) => ({ ...course, description: "Listed in the degree map. Confirm offering and any course conditions." })) : []),
+  ];
+  const catalogByKey = new Map(catalog.map((course) => [course.code.replace(/\s+/g, "").toUpperCase(), course]));
   const courseKey = (code: string) => code.replace(/\s+/g, "").toUpperCase();
   const termPattern = /\b(spring|summer|fall)\s+(20\d{2})\b/i;
   const current = studentData.currentSemester;
-  const nextRegularTerm = current
-    ? `${current.term === "fall" ? "spring" : "fall"} ${current.year + (current.term === "fall" ? 1 : 0)}`
-    : "";
+  const basis = current ?? currentTerm();
+  const nextRegularTerm = `${basis.term === "fall" ? "spring" : "fall"} ${basis.year + (basis.term === "fall" ? 1 : 0)}`;
   const targetTerm = message.match(termPattern)
     ?? [...history].reverse().filter((item) => item.role === "user").map((item) => item.content.match(termPattern)).find(Boolean)
     ?? nextRegularTerm.match(termPattern);
@@ -260,9 +255,10 @@ export async function POST(request: Request) {
   const termIndex = (term: string, year: number) => year * 3 + termOrder[term.toLowerCase() as keyof typeof termOrder];
   const targetIndex = targetTerm ? termIndex(targetTerm[1], Number(targetTerm[2])) : undefined;
   const earlierCourses = new Map(
-    current && targetIndex !== undefined && termIndex(current.term, current.year) < targetIndex
-      ? (current.courses ?? []).filter(({ grade }) => !grade || grade.toUpperCase() === "WIP").map(({ code }) => [courseKey(code), code] as const)
-      : []
+    targetIndex === undefined ? [] : [...(studentData.plannedSemesters ?? []), ...(current ? [current] : [])]
+      .filter((term) => termIndex(term.term, term.year) >= today && termIndex(term.term, term.year) < targetIndex)
+      .flatMap((term) => (term.courses ?? []).filter(({ grade }) => !grade || /^(?:WIP|I|NG|[ABCD][+-]?|P)$/i.test(grade))
+        .map(({ code }) => [courseKey(code), code] as const))
   );
   const projectedCodes = new Set([...completedCodeSet, ...earlierCourses.keys()]);
   const unavailable = new Set([
@@ -385,17 +381,29 @@ export async function POST(request: Request) {
     semester.term === meetingSemester?.term && semester.year === meetingSemester?.year
   )?.courses ?? [];
   const isBatchMeetingEdit = requestsScheduleEdit && meetingLines.length > 1;
-  const reachableCredits = new Set([0]);
-  for (const { credits } of eligibleByCode.values()) {
-    for (const total of [...reachableCredits]) reachableCredits.add(total + credits);
+  const requestedCount = Number(message.match(/\b(\d{1,2})\s+courses?\b/i)?.[1] ?? MAX_COUNTED_COURSES);
+  const termCourses = new Map(
+    [...(studentData.plannedSemesters ?? []), ...(current ? [current] : [])]
+      .filter((term) => termIndex(term.term, term.year) === targetIndex)
+      .flatMap((term) => (term.courses ?? []).filter(({ grade }) => grade?.toUpperCase() !== "W"))
+      .map((course) => {
+        const details = catalogByKey.get(courseKey(course.code));
+        return [courseKey(course.code), { ...details, ...course, credits: course.credits ?? details?.credits ?? 0 }] as const;
+      })
+  );
+  const existingLoad = semesterLoad([...termCourses.values()]);
+  const countLimit = Math.max(0, Math.min(MAX_COUNTED_COURSES - existingLoad.counted, requestedCount));
+  const creditLimit = Math.max(0, MAX_SEMESTER_CREDITS - existingLoad.credits);
+  if (isSemesterRequest && (existingLoad.counted > MAX_COUNTED_COURSES || existingLoad.credits >= MAX_SEMESTER_CREDITS)) {
+    return NextResponse.json({ answer: "The saved semester has reached its load limit. Free up capacity before requesting more courses." });
   }
   const balanceAreas = ["Major core", "Common core", "General education", "Declared minor"];
   const areaMask = (areas: string[]) => balanceAreas.reduce(
     (mask, area, index) => areas.includes(area) ? mask | (1 << index) : mask, 0
   );
   const availableMask = planningCandidates.reduce((mask, course) => mask | areaMask(course.areas), 0);
-  const combinations = new Map<string, typeof planningCandidates>([["0:0", []]]);
-  if (targetCredits && isSemesterRequest) {
+  const combinations = new Map<string, typeof planningCandidates>([["0:0:0", []]]);
+  if (isSemesterRequest) {
     const candidateGroups = new Map<string, typeof planningCandidates>();
     for (const course of planningCandidates) {
       const group = [...chooseOneGroups].find(([, codes]) => codes.has(courseKey(course.code)))?.[0] ?? course.code;
@@ -404,16 +412,25 @@ export async function POST(request: Request) {
     for (const group of candidateGroups.values()) {
       const previous = [...combinations];
       for (const course of group) for (const [key, courses] of previous) {
-        const [total, mask] = key.split(":").map(Number);
+        const [total, mask, counted] = key.split(":").map(Number);
         const next = total + course.credits;
-        if (next <= targetCredits) {
-          const nextKey = `${next}:${mask | areaMask(course.areas)}`;
+        const nextCount = counted + Number(countsTowardCourseLimit(course));
+        if (next <= creditLimit && nextCount <= countLimit) {
+          const nextKey = `${next}:${mask | areaMask(course.areas)}:${nextCount}`;
           if (!combinations.has(nextKey)) combinations.set(nextKey, [...courses, course]);
         }
       }
     }
   }
-  const example = combinations.get(`${targetCredits}:${availableMask}`);
+  const validOptions = [...combinations].filter(([, courses]) => courses.length > 0 && courses.every(({ code }) => {
+    const entry = catalogByKey.get(courseKey(code));
+    const peers = new Set([...projectedCodes, ...termCourses.keys(), ...courses.map((course) => courseKey(course.code))]);
+    return coursePrerequisitesMet({ prerequisite_courses: entry?.corequisite_courses, prerequisite_raw: entry?.corequisite_raw }, peers);
+  }) && [...chooseOneGroups.values()].every((group) =>
+    courses.filter(({ code }) => group.has(courseKey(code))).length <= 1));
+  const reachableCredits = [...new Set(validOptions.map(([key]) => Number(key.split(":")[0])))].sort((a, b) => a - b);
+  const feasibleCount = Math.max(0, ...validOptions.map(([key]) => Number(key.split(":")[2])));
+  const example = targetCredits ? validOptions.find(([key]) => key.startsWith(`${targetCredits}:${availableMask}:`))?.[1] : undefined;
   let revisionFeedback = "";
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -431,7 +448,7 @@ export async function POST(request: Request) {
             { role: "system", content: example
               ? `An exact-credit composition covering the available subject areas exists: ${example.map(({ code }) => code).join(", ")}. Use it as a starting point. Choose and return the best eligible mix for the student.`
               : "Respect the degree categories and explain any constraint that prevents the requested subject mix." },
-            { role: "system", content: `Help the student plan a semester. Use recommend_semester to return a plan. The courseCodes field must be an array of unique code strings. Only use codes from the eligible list below. Balance major core, math or science, general education, and the declared minor as requested. Do not change the schedule. If no exact total is possible, use the closest achievable credit total and explain the difference.\nIgnore legacy class-standing restrictions. Distinguish already scheduled courses from missing prerequisites. Eligible courses: ${JSON.stringify([...eligibleByCode.values()])}\nCredit totals possible before degree choice limits: ${[...reachableCredits].sort((a, b) => a - b).join(", ")}\n${revisionFeedback}` },
+            { role: "system", content: `Help the student plan a semester. Target ${feasibleCount} counted courses when feasible, with at most ${creditLimit} additional credits (21 total for the semester). Labs, CIP, SLP and FYE I/II do not count toward the course limit. An explicit credit target takes priority over filling all six spots. Use recommend_semester to return a plan. The courseCodes field must be an array of unique code strings. Only use codes from the eligible list below. Balance major core, math or science, general education, and the declared minor as requested. Do not change the schedule. If no exact total is possible, use the closest achievable credit total and explain the difference.\nIgnore legacy class-standing restrictions. Distinguish already scheduled courses from missing prerequisites. Eligible courses: ${JSON.stringify([...eligibleByCode.values()])}\nCredit totals found within the load and choice limits: ${reachableCredits.join(", ")}\n${revisionFeedback}` },
             ...history,
             { role: "user", content: message },
           ] : [
@@ -517,10 +534,29 @@ export async function POST(request: Request) {
           revisionFeedback = "The previous selection used multiple courses from a choose-one requirement. Use different requirement groups.";
           continue;
         }
-        const credits = selected.reduce((sum, course) => sum + course.credits, 0);
-        const closestDistance = targetCredits
-          ? Math.min(...[...reachableCredits].filter((total) => total > 0).map((total) => Math.abs(total - targetCredits)))
-          : 0;
+        const { credits, counted } = semesterLoad(selected);
+        if (credits > creditLimit || counted > countLimit) {
+          revisionFeedback = `The selection exceeds the remaining capacity of ${countLimit} counted courses or ${creditLimit} credits. Return a smaller valid selection.`;
+          continue;
+        }
+        const availableCorequisites = new Set([...projectedCodes, ...termCourses.keys(), ...selected.map(({ code }) => courseKey(code))]);
+        if (selected.some(({ code }) => {
+          const course = catalogByKey.get(courseKey(code));
+          return !coursePrerequisitesMet({
+            prerequisite_courses: course?.corequisite_courses,
+            prerequisite_raw: course?.corequisite_raw,
+          }, availableCorequisites);
+        })) {
+          revisionFeedback = "Include any required corequisites in the same semester, or use other eligible courses.";
+          continue;
+        }
+        if (!targetCredits && !subjectSwap && counted < feasibleCount) {
+          revisionFeedback = `There is room for ${feasibleCount} eligible counted courses. Fill the requested load while respecting the credit cap.`;
+          continue;
+        }
+        const closestDistance = targetCredits && validOptions.length
+          ? Math.min(...validOptions.map(([key]) => Math.abs(Number(key.split(":")[0]) - targetCredits)))
+          : Math.abs(credits - targetCredits);
         if (targetCredits && Math.abs(credits - targetCredits) > closestDistance) {
           revisionFeedback = `The previous recommendation totaled ${credits} credits. Select eligible courses that add to ${targetCredits} credits with the requested subject mix, or explain why you could not reach the target.`;
           continue;

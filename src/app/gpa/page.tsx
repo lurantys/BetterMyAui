@@ -1,5 +1,8 @@
 "use client";
 
+import { CourseAutocompleteInput } from "@/components/course-autocomplete-input";
+import { ConcealedGpa, GpaToggle } from "@/components/gpa-visibility";
+import { StyledSelect } from "@/components/ui/styled-select";
 import {
   startTransition,
   useState,
@@ -13,9 +16,6 @@ import {
   Trash2,
   GraduationCap,
   BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  Search,
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,8 @@ import {
   gpaBarWidth,
 } from "@/lib/store";
 
+const gradeChoices = GRADE_OPTIONS.map(({ letter }) => ({ value: letter, label: letter }));
+
 interface ScheduleWithSource extends SemesterSchedule {
   _source: "calendar" | "past";
 }
@@ -60,21 +62,20 @@ function getTranscriptCourseCredits(code: string, catalogCredits?: number): numb
   return encodedCredits > 0 ? encodedCredits : (catalogCredits && catalogCredits > 0 ? catalogCredits : 3);
 }
 
-function GpaGauge({ gpa, label }: { gpa: number; label: string }) {
+function GpaGauge({ gpa, revealed, onToggle }: { gpa: number; revealed: boolean; onToggle: () => void }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          {label}
-        </span>
-        <span className={`type-display text-2xl ${gpaColor(gpa)}`}>
-          {gpa.toFixed(2)}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Cumulative GPA</span>
+        <div className="flex items-center gap-1">
+          <ConcealedGpa revealed={revealed} value={gpa.toFixed(2)} className={`type-display text-2xl ${revealed ? gpaColor(gpa) : ""}`} />
+          <GpaToggle revealed={revealed} onToggle={onToggle} />
+        </div>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary" aria-hidden="true">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${
-            gpa >= 3.7
+          className={`h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none ${
+            !revealed ? "bg-transparent" : gpa >= 3.7
               ? "bg-status-met"
               : gpa >= 3.0
                 ? "bg-primary"
@@ -82,7 +83,7 @@ function GpaGauge({ gpa, label }: { gpa: number; label: string }) {
                   ? "bg-status-missing"
                   : "bg-destructive"
           }`}
-          style={{ width: gpaBarWidth(gpa) }}
+          style={{ width: revealed ? gpaBarWidth(gpa) : 0 }}
         />
       </div>
       <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -107,12 +108,12 @@ export default function CareerPage() {
     "all"
   );
 
-  // Past semester form
-  const [showAddPast, setShowAddPast] = useState(false);
-  const [pastTerm, setPastTerm] = useState<"fall" | "spring" | "summer">(
-    "fall"
-  );
-  const [pastYear, setPastYear] = useState(CURRENT_YEAR - 1);
+  const [showGpa, setShowGpa] = useState(false);
+  const [semesterKind, setSemesterKind] = useState<"past" | "planned" | "">("");
+  const [showAddSemester, setShowAddSemester] = useState(false);
+  const [semesterTerm, setSemesterTerm] = useState<SemesterSchedule["term"]>("fall");
+  const [semesterYear, setSemesterYear] = useState(CURRENT_YEAR);
+  const [semesterError, setSemesterError] = useState("");
 
   // Transcript import
   const [showImport, setShowImport] = useState(false);
@@ -132,6 +133,7 @@ export default function CareerPage() {
       fullName: profile?.fullName ?? "Student",
       major: profile?.major ?? null,
       minor: profile?.minor ?? null,
+      specialization: kind === "minor" || value === profile?.major ? profile?.specialization : undefined,
       [kind]: value || null,
     };
     setProfile(nextProfile);
@@ -143,14 +145,6 @@ export default function CareerPage() {
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [newCourseCredits, setNewCourseCredits] = useState("3");
   const [newCourseGrade, setNewCourseGrade] = useState("A");
-
-  // Catalog search
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<CatalogCourse[]>([]);
-  const [searching, setSearching] = useState(false);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const storedProfile = loadProfile();
@@ -277,59 +271,51 @@ export default function CareerPage() {
     [allSchedules, activeId]
   );
 
-  // Catalog search — debounce input → query
-  useEffect(() => {
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      setSearchQuery(searchInput);
-    }, 200);
-    return () => {
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    };
-  }, [searchInput]);
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      return;
-    }
-    const controller = new AbortController();
-    startTransition(() => setSearching(true));
-    fetch(`/api/courses?q=${encodeURIComponent(searchQuery)}&limit=6`, {
-      signal: controller.signal,
-    })
-      .then((r) => r.json())
-      .then((d) => setSearchResults((d.courses ?? []).slice(0, 6)))
-      .catch(() => {})
-      .finally(() => setSearching(false));
-    return () => controller.abort();
-  }, [searchQuery]);
-
   const selectCatalogCourse = useCallback((course: CatalogCourse) => {
     setNewCourseCode(course.code);
     setNewCourseTitle(course.title);
     setNewCourseCredits(course.credits.toString());
-    setSearchOpen(false);
-    setSearchInput("");
-    setSearchQuery("");
-    setSearchResults([]);
   }, []);
 
-  // Add past semester
-  const addPastSemester = useCallback(() => {
-    const exists = pastSchedules.some(
-      (s) => s.term === pastTerm && s.year === pastYear
-    );
-    if (exists) return;
-    const sem: SemesterSchedule = {
-      id: generateId(),
-      term: pastTerm,
-      year: pastYear,
-      courses: [],
-    };
-    setPastSchedules((prev) => [...prev, sem]);
-    setShowAddPast(false);
-    setActiveId(sem.id);
-  }, [pastTerm, pastYear, pastSchedules]);
+  function selectSemesterKind(kind: typeof semesterKind) {
+    setSemesterKind(kind);
+    setSemesterError("");
+    const terms = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1].flatMap((year) =>
+      (["spring", "summer", "fall"] as const).map((term) => ({ year, term })));
+    const eligible = terms.filter(({ term, year }) => getSemesterStatus(term, year) === kind
+      && !allSchedules.some((semester) => semester.term === term && semester.year === year));
+    const suggestion = kind === "past" ? eligible.at(-1) : eligible[0];
+    if (suggestion) {
+      setSemesterTerm(suggestion.term);
+      setSemesterYear(suggestion.year);
+    }
+  }
+
+  function addSemester(event: React.FormEvent) {
+    event.preventDefault();
+    if (!semesterKind || getSemesterStatus(semesterTerm, semesterYear) !== semesterKind) {
+      setSemesterError(semesterKind === "past" ? "Choose a past semester." : "Choose a future semester.");
+      return;
+    }
+    if (allSchedules.some(({ term, year }) => term === semesterTerm && year === semesterYear)) {
+      setSemesterError("That semester is already in Career.");
+      return;
+    }
+    const semester: SemesterSchedule = { id: generateId(), term: semesterTerm, year: semesterYear, courses: [] };
+    const updateSchedules = semesterKind === "past" ? setPastSchedules : setCalendarSchedules;
+    updateSchedules((previous) => [...previous, semester]);
+    if (activeTab !== "all") setActiveTab(semesterKind === "past" ? "past" : "calendar");
+    setActiveId(semester.id);
+    setShowAddSemester(false);
+    setSemesterError("");
+  }
+
+  function deletePlannedSemester(semester: SemesterSchedule) {
+    if (getSemesterStatus(semester.term, semester.year) !== "planned") return;
+    if (semester.courses.length && !window.confirm(`Remove ${termLabel(semester.term)} ${semester.year} and its planned courses from Career and Schedule?`)) return;
+    setCalendarSchedules((previous) => previous.filter(({ id }) => id !== semester.id));
+    if (activeId === semester.id) setActiveId(null);
+  }
 
   // Transcript import handlers
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -436,6 +422,7 @@ export default function CareerPage() {
       fullName: profile?.fullName ?? "Student",
       major,
       minor: importMinor.trim() || null,
+      specialization: major === profile?.major ? profile?.specialization : undefined,
     };
     setProfile(nextProfile);
 
@@ -610,7 +597,7 @@ export default function CareerPage() {
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <NavBar active="/gpa" />
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <main className="motion-page flex min-w-0 flex-1 flex-col overflow-hidden">
           <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-5 sm:px-8 sm:py-8">
           <div className="mb-8">
             <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground">My Career</h1>
@@ -673,10 +660,10 @@ export default function CareerPage() {
                         {s.courses.reduce((sum, course) => sum + course.credits, 0)} cr
                       </span>
                     </button>
-                    {s._source === "past" && (
+                    {(s._source === "past" || getSemesterStatus(s.term, s.year) === "planned") && (
                       <button
-                        onClick={() => deletePastSemester(s.id)}
-                        className="mr-1 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                        onClick={() => s._source === "past" ? deletePastSemester(s.id) : deletePlannedSemester(s)}
+                        className="mr-1 rounded p-1 text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 md:opacity-0"
                         aria-label={`Remove ${termLabel(s.term)} ${s.year}`}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -685,157 +672,70 @@ export default function CareerPage() {
                   </div>
                 ))}
 
-                {activeTab !== "calendar" && (
-                  <>
-                    {!showAddPast ? (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => setShowAddPast(true)}
-                          className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>Add past semester</span>
-                        </button>
-                        <button
-                          ref={importTriggerRef}
-                          onClick={() => {
-                            setImportMajor(profile?.major ?? "");
-                            setImportMinor(profile?.minor ?? "");
-                            setImportError("");
-                            setShowImport(true);
-                          }}
-                          className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                        >
-                          <Upload className="h-3.5 w-3.5" />
-                          <span>Import transcript</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 rounded-md bg-muted p-1">
-                        <select
-                          value={pastTerm}
-                          onChange={(e) =>
-                            setPastTerm(
-                              e.target.value as "fall" | "spring" | "summer"
-                            )
-                          }
-                          className="h-7 rounded border-0 bg-transparent px-2 text-xs text-foreground outline-none"
-                        >
-                          {TERM_OPTIONS.map((t) => (
-                            <option key={t.value} value={t.value}>
-                              {t.label}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="flex items-center gap-0.5">
-                          <button
-                            onClick={() => setPastYear((y) => y - 1)}
-                            className="rounded p-0.5 text-foreground hover:bg-accent"
-                          >
-                            <ChevronLeft className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-10 text-center text-xs font-medium text-foreground">
-                            {pastYear}
-                          </span>
-                          <button
-                            onClick={() => setPastYear((y) => y + 1)}
-                            className="rounded p-0.5 text-foreground hover:bg-accent"
-                          >
-                            <ChevronRight className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                        <button
-                          onClick={addPastSemester}
-                          className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                        >
-                          Add
-                        </button>
-                        <button
-                          onClick={() => setShowAddPast(false)}
-                          className="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
+                <Button type="button" size="icon" variant="ghost" className="text-muted-foreground"
+                  aria-label="Add semester" title="Add semester" aria-expanded={showAddSemester} aria-controls="add-semester"
+                  onClick={() => {
+                    if (!showAddSemester) selectSemesterKind("");
+                    setShowAddSemester(!showAddSemester);
+                  }}>
+                  <Plus className="size-4" aria-hidden="true" />
+                </Button>
+
+                {activeTab !== "calendar" && <button
+                  ref={importTriggerRef}
+                  onClick={() => {
+                    setImportMajor(profile?.major ?? "");
+                    setImportMinor(profile?.minor ?? "");
+                    setImportError("");
+                    setShowImport(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <Upload className="size-3.5" aria-hidden="true" />
+                  Import transcript
+                </button>}
               </div>
+
+              {showAddSemester && <form id="add-semester" onSubmit={addSemester} className="motion-enter flex flex-wrap items-end gap-3 rounded-md border border-border bg-card p-3">
+                <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+                  Semester type
+                  <StyledSelect label="Semester type" value={semesterKind} required placeholder="Choose type"
+                    options={[{ value: "past", label: "Past" }, { value: "planned", label: "Planned" }]}
+                    onValueChange={(value) => selectSemesterKind(value as typeof semesterKind)} />
+                </label>
+                {semesterKind && <>
+                  <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+                    Term
+                    <StyledSelect label="Term" value={semesterTerm} options={TERM_OPTIONS}
+                      onValueChange={(value) => setSemesterTerm(value as SemesterSchedule["term"])} />
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+                    Year
+                    <Input className="w-24 text-foreground" type="number" min={1990} max={2100} required value={semesterYear || ""}
+                      onChange={(event) => setSemesterYear(Number(event.target.value))} />
+                  </label>
+                  <Button type="submit" variant="outline">Add</Button>
+                </>}
+                <Button type="button" variant="ghost" className="text-muted-foreground" onClick={() => setShowAddSemester(false)}>Cancel</Button>
+                {semesterError && <p role="alert" className="w-full text-xs text-destructive">{semesterError}</p>}
+              </form>}
 
               {/* Active semester content */}
               {activeSchedule ? (
-                <div className="space-y-4">
+                <div key={activeSchedule.id} className="motion-enter space-y-4">
                   {/* Add course form for past semesters */}
                   {activeSchedule._source === "past" && (
                     <Card>
                       <CardContent className="p-4">
                         {showAddCourse === activeSchedule.id ? (
                           <div className="space-y-3">
-                            <div>
-                              <button
-                                onClick={() => setSearchOpen(!searchOpen)}
-                                className="flex w-full items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent"
-                              >
-                                <Search className="h-4 w-4" />
-                                {searchOpen
-                                  ? "Type to search courses..."
-                                  : "Search course catalog"}
-                              </button>
-                              {searchOpen && (
-                                <div className="relative mt-1">
-                                  <Input
-                                    placeholder="e.g. CSC 2302, Data Structures..."
-                                    value={searchInput}
-                                    onChange={(e) => {
-                                      setSearchInput(e.target.value);
-                                      setSearchResults([]);
-                                    }}
-                                    autoFocus
-                                  />
-                                  {searchResults.length > 0 && (
-                                    <div className="absolute z-10 mt-1 w-full rounded-md bg-card ring-1 ring-border/70">
-                                      {searchResults.map((c) => (
-                                        <button
-                                          key={c.code}
-                                          onClick={() => selectCatalogCourse(c)}
-                                          className="flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-accent transition-colors first:rounded-t-lg last:rounded-b-lg"
-                                        >
-                                          <span className="font-sans text-xs font-medium text-primary shrink-0 mt-0.5">
-                                            {c.code}
-                                          </span>
-                                          <div className="min-w-0">
-                                            <div className="text-sm truncate">
-                                              {c.title}
-                                            </div>
-                                            <div className="text-[10px] text-muted-foreground">
-                                              {c.credits} credits
-                                            </div>
-                                          </div>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {searching && (
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                      Searching...
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                <label htmlFor="career-course-code" className="mb-1 block text-xs font-medium text-muted-foreground">
                                   Course code
                                 </label>
-                                <Input
-                                  placeholder="e.g. CSC 2302"
-                                  value={newCourseCode}
-                                  onChange={(e) =>
-                                    setNewCourseCode(e.target.value)
-                                  }
-                                />
+                                <CourseAutocompleteInput id="career-course-code" value={newCourseCode}
+                                  placeholder="Search by code or title" onChange={setNewCourseCode} onSelect={selectCatalogCourse} />
                               </div>
                               <div>
                                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -854,15 +754,15 @@ export default function CareerPage() {
                             </div>
 
                             <div>
-                              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                              <label htmlFor="career-course-title" className="mb-1 block text-xs font-medium text-muted-foreground">
                                 Title
                               </label>
-                              <Input
+                              <CourseAutocompleteInput
+                                id="career-course-title"
                                 placeholder="e.g. Data Structures"
                                 value={newCourseTitle}
-                                onChange={(e) =>
-                                  setNewCourseTitle(e.target.value)
-                                }
+                                onChange={setNewCourseTitle}
+                                onSelect={selectCatalogCourse}
                               />
                             </div>
 
@@ -870,32 +770,14 @@ export default function CareerPage() {
                               <label className="mb-1 block text-xs font-medium text-muted-foreground">
                                 Grade
                               </label>
-                              <select
-                                value={newCourseGrade}
-                                onChange={(e) =>
-                                  setNewCourseGrade(e.target.value)
-                                }
-                                className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                {GRADE_OPTIONS.map((g) => (
-                                  <option key={g.letter} value={g.letter}>
-                                    {g.letter}
-                                  </option>
-                                ))}
-                              </select>
+                              <StyledSelect label="Grade" value={newCourseGrade} options={gradeChoices} onValueChange={setNewCourseGrade} />
                             </div>
 
                             <div className="flex justify-end gap-2 pt-1">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  setShowAddCourse(null);
-                                  setSearchOpen(false);
-                                  setSearchInput("");
-                                  setSearchQuery("");
-                                  setSearchResults([]);
-                                }}
+                                onClick={() => setShowAddCourse(null)}
                               >
                                 Cancel
                               </Button>
@@ -959,24 +841,10 @@ export default function CareerPage() {
                         <span className="shrink-0 text-xs text-muted-foreground">
                           {course.credits} cr
                         </span>
-                        <select
-                          value={course.grade ?? ""}
-                          onChange={(e) =>
-                            updateGrade(
-                              activeSchedule.id,
-                              course.id,
-                              e.target.value
-                            )
-                          }
-                          className="h-9 w-12 shrink-0 rounded border border-input bg-transparent px-1 text-center text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-8 sm:w-16"
-                        >
-                          <option value="">—</option>
-                          {GRADE_OPTIONS.map((g) => (
-                            <option key={g.letter} value={g.letter}>
-                              {g.letter}
-                            </option>
-                          ))}
-                        </select>
+                        <StyledSelect label={`Grade for ${course.code}`} value={course.grade ?? ""}
+                          options={[{ value: "", label: "—" }, ...gradeChoices]} compact
+                          className="w-14 shrink-0 sm:w-16" triggerClassName="sm:h-8"
+                          onValueChange={(value) => updateGrade(activeSchedule.id, course.id, value)} />
                         <span className="min-w-8 text-right font-mono text-xs text-muted-foreground sm:min-w-[50px] sm:text-sm">
                           {course.gradePoints !== null
                             ? `${course.gradePoints.toFixed(2)}`
@@ -1011,21 +879,11 @@ export default function CareerPage() {
                           total credits
                         </span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs text-muted-foreground">
-                          Semester GPA
-                        </span>
-                        <span
-                          className={`type-display ml-2 text-lg ${
-                            activeScheduleGpa !== null
-                              ? gpaColor(activeScheduleGpa)
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {activeScheduleGpa !== null
-                            ? activeScheduleGpa.toFixed(2)
-                            : "\u2014"}
-                        </span>
+                      <div className="ml-auto flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">Semester GPA</span>
+                        <ConcealedGpa revealed={showGpa} value={activeScheduleGpa?.toFixed(2) ?? "—"}
+                          className={`type-display text-lg ${showGpa && activeScheduleGpa !== null ? gpaColor(activeScheduleGpa) : ""}`} />
+                        <GpaToggle revealed={showGpa} onToggle={() => setShowGpa((shown) => !shown)} />
                       </div>
                     </div>
                   )}
@@ -1035,7 +893,7 @@ export default function CareerPage() {
                   <GraduationCap className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground">
                     {allSchedules.length === 0
-                      ? "No semesters yet. Add a past semester or plan courses in the Schedule tab."
+                      ? "No semesters yet."
                       : "Select a semester to view courses."}
                   </p>
                 </div>
@@ -1074,7 +932,7 @@ export default function CareerPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <GpaGauge gpa={cumulativeGpa} label="Cumulative GPA" />
+                  <GpaGauge gpa={cumulativeGpa} revealed={showGpa} onToggle={() => setShowGpa((shown) => !shown)} />
                   <dl className="divide-y divide-border border-t border-border">
                     {[
                       ["Total Credits Earned", earnedCredits],
@@ -1146,15 +1004,8 @@ export default function CareerPage() {
                             <span className="text-muted-foreground">
                               {stat.credits} cr
                             </span>
-                            <span
-                              className={`font-mono font-medium ${
-                                stat.gpa !== null
-                                  ? gpaColor(stat.gpa)
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {stat.gpa !== null ? stat.gpa.toFixed(2) : "\u2014"}
-                            </span>
+                            <ConcealedGpa revealed={showGpa} value={stat.gpa?.toFixed(2) ?? "—"}
+                              className={`min-w-8 text-right font-mono font-medium ${showGpa && stat.gpa !== null ? gpaColor(stat.gpa) : ""}`} />
                           </span>
                         </div>
                       ))}
@@ -1169,8 +1020,8 @@ export default function CareerPage() {
 
       {/* Transcript Import Modal */}
       {showImport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
-          <div ref={importDialogRef} role="dialog" aria-modal="true" aria-labelledby="transcript-import-title" className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
+        <div className="motion-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/45">
+          <div ref={importDialogRef} role="dialog" aria-modal="true" aria-labelledby="transcript-import-title" className="motion-dialog mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <h2 id="transcript-import-title" className="text-lg font-semibold">Import Transcript</h2>
               <button

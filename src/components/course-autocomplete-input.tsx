@@ -71,7 +71,7 @@ export function CourseAutocompleteInput({ id, value, placeholder, onChange, onSe
         }}
       />
       {courses.length > 0 && (
-        <ul id={listId} role="listbox" aria-label="Catalog matches" className="absolute inset-x-0 top-full mt-1 max-h-52 min-w-full overflow-auto overscroll-contain rounded-lg border border-border bg-card p-1 shadow-xl sm:min-w-64">
+        <ul id={listId} role="listbox" aria-label="Catalog matches" className="motion-menu absolute inset-x-0 top-full mt-1 max-h-52 min-w-full overflow-auto overscroll-contain rounded-lg border border-border bg-card p-1 shadow-xl sm:min-w-64">
           {courses.map((course, index) => (
             <li key={course.code} id={`${listId}-${index}`} role="option" aria-selected={active === index}
               onMouseDown={(event) => event.preventDefault()} onClick={() => choose(course)}

@@ -490,3 +490,93 @@ option {
     animation: none;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .styled-select-list { animation: select-open 130ms ease-out both; }
+  .gpa-reveal { animation: gpa-reveal 220ms ease-out both; }
+  .gpa-conceal { animation: gpa-conceal 175ms ease-out both; }
+}
+
+@keyframes select-open {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes gpa-reveal {
+  from { filter: blur(4px); opacity: 0.35; }
+  to { filter: blur(0); opacity: 1; }
+}
+
+@keyframes gpa-conceal {
+  from { filter: blur(4px); opacity: 0.35; }
+  to { filter: blur(1.5px); opacity: 1; }
+}
+
+/* Shared interaction motion. Keep layout, focus and hit targets stable. */
+:root {
+  --motion-quick: 140ms;
+  --motion-standard: 200ms;
+  --motion-settle: cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(button, summary, [role="option"], [role="switch"], .motion-nav a) {
+    transition: background-color var(--motion-quick) ease,
+      color var(--motion-quick) ease, border-color var(--motion-quick) ease,
+      box-shadow var(--motion-quick) ease, opacity var(--motion-quick) ease,
+      transform var(--motion-quick) var(--motion-settle), scale var(--motion-quick) var(--motion-settle);
+  }
+
+  :where(button:not(:disabled), summary, .motion-nav a):active {
+    scale: 0.98;
+  }
+
+  .motion-page { animation: motion-opacity var(--motion-standard) var(--motion-settle) backwards; }
+  .motion-enter { animation: fade-in var(--motion-standard) var(--motion-settle) backwards; }
+  .motion-backdrop { animation: motion-opacity var(--motion-quick) ease-out backwards; }
+  .motion-dialog { animation: motion-dialog-in 220ms var(--motion-settle) backwards; }
+  .motion-menu { animation: select-open var(--motion-quick) var(--motion-settle) backwards; transform-origin: bottom; }
+  .motion-theme-icon { animation: motion-theme-in var(--motion-standard) var(--motion-settle) backwards; }
+  .motion-chevron { transition: rotate var(--motion-standard) var(--motion-settle); }
+
+  @supports (interpolate-size: allow-keywords) {
+    .motion-details::details-content {
+      interpolate-size: allow-keywords;
+      block-size: 0;
+      overflow: clip;
+      opacity: 0;
+      transition: block-size var(--motion-standard) var(--motion-settle),
+        opacity var(--motion-standard) ease, content-visibility var(--motion-standard) allow-discrete;
+    }
+
+    .motion-details[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+      overflow: visible;
+    }
+  }
+}
+
+@keyframes motion-opacity {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes motion-theme-in {
+  from { opacity: 0; transform: rotate(-25deg) scale(0.8); }
+  to { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+@keyframes motion-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(button, summary, [role="option"], .motion-nav a, .motion-chevron, .animate-fade-in, .animate-loading-bar) {
+    animation-duration: 1ms !important;
+    transition-duration: 0ms !important;
+  }
+
+  .motion-nav { transition-duration: 0ms; }
+}

@@ -13,9 +13,9 @@ export function ThemeToggle() {
       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
     >
       {resolvedTheme === "dark" ? (
-        <Moon className="h-4 w-4" />
+        <Moon key="dark" aria-hidden="true" className="motion-theme-icon h-4 w-4" />
       ) : (
-        <Sun className="h-4 w-4" />
+        <Sun key="light" aria-hidden="true" className="motion-theme-icon h-4 w-4" />
       )}
     </button>
   );

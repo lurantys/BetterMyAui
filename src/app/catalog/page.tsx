@@ -1,5 +1,6 @@
 "use client";
 
+import { StyledSelect } from "@/components/ui/styled-select";
 import {
   useState,
   useEffect,
@@ -7,7 +8,7 @@ import {
   useRef,
   useMemo,
 } from "react";
-import { Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { NavBar } from "@/components/nav-bar";
 
@@ -59,6 +60,7 @@ export default function CatalogPage() {
   const [selectedDiscipline, setSelectedDiscipline] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("");
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
+  const [activePrerequisite, setActivePrerequisite] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visiblePage, setVisiblePage] = useState({ key: "", count: PAGE_SIZE });
   const loadingMoreRef = useRef(false);
@@ -156,7 +158,7 @@ export default function CatalogPage() {
       <div className="flex min-h-screen">
         <NavBar active="/catalog" />
 
-        <main className="min-w-0 flex-1">
+        <main className="motion-page min-w-0 flex-1">
           <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-3 py-5 sm:px-8 sm:py-8">
             <header className="mb-7">
               <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground">
@@ -178,31 +180,14 @@ export default function CatalogPage() {
                 />
               </div>
               <div className="relative">
-                <select
-                  value={selectedDiscipline}
-                  onChange={(event) => setSelectedDiscipline(event.target.value)}
-                  className="h-10 w-full appearance-none sm:h-9 sm:w-auto rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
-                >
-                  <option value="">All disciplines</option>
-                  {disciplineCodes.map((code) => (
-                    <option key={code} value={code}>
-                      {code} — {disciplines[code]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <StyledSelect label="Discipline" value={selectedDiscipline} onValueChange={setSelectedDiscipline}
+                  className="sm:w-56" options={[{ value: "", label: "All disciplines" },
+                    ...disciplineCodes.map((code) => ({ value: code, label: `${code} / ${disciplines[code]}` }))]} />
               </div>
               <div className="relative">
-                <select
-                  value={selectedLevel}
-                  onChange={(event) => setSelectedLevel(event.target.value)}
-                  className="h-10 w-full appearance-none sm:h-9 sm:w-auto rounded-md border-0 bg-card px-3 pr-8 text-sm text-foreground shadow-none outline-none ring-1 ring-inset ring-border/70 focus-visible:ring-2 focus-visible:ring-primary/30"
-                >
-                  <option value="">All levels</option>
-                  <option value="undergraduate">Undergraduate</option>
-                  <option value="graduate">Graduate</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <StyledSelect label="Course level" value={selectedLevel} onValueChange={setSelectedLevel}
+                  className="sm:w-40" options={[{ value: "", label: "All levels" },
+                    { value: "undergraduate", label: "Undergraduate" }, { value: "graduate", label: "Graduate" }]} />
               </div>
             </div>
 
@@ -215,13 +200,12 @@ export default function CatalogPage() {
                 {visibleCourses.map((course) => {
                   const expanded = expandedCourse === course.code;
                   return (
-                    <div key={course.code}>
-                      <button
-                        onClick={() =>
-                          setExpandedCourse(expanded ? null : course.code)
-                        }
-                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/35"
-                      >
+                    <details key={course.code} open={expanded} className="motion-details group">
+                      <summary onClick={(event) => {
+                        event.preventDefault();
+                        setActivePrerequisite(null);
+                        setExpandedCourse(expanded ? null : course.code);
+                      }} className="flex w-full cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/35 [&::-webkit-details-marker]:hidden">
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="shrink-0 whitespace-nowrap font-sans text-xs font-semibold text-foreground sm:text-sm">
                             {course.code}
@@ -238,14 +222,9 @@ export default function CatalogPage() {
                             </span>
                           )}
                         </div>
-                        {expanded ? (
-                          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        )}
-                      </button>
+                        <ChevronDown aria-hidden="true" className="motion-chevron size-4 shrink-0 -rotate-90 text-muted-foreground group-open:rotate-0" />
+                      </summary>
 
-                      {expanded && (
                         <div className="bg-muted/20 px-5 pb-5 pt-4">
                           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
                             {course.description}
@@ -258,20 +237,30 @@ export default function CatalogPage() {
                               {course.prerequisite_courses.map((code) => {
                                 const normalizedCode = code.trim().toUpperCase();
                                 const name = courseNames[normalizedCode];
+                                const tooltipKey = `${course.code}-${code}`;
                                 return (
                                   <span
-                                    key={`${course.code}-${code}`}
-                                    className="group relative inline-flex outline-none"
+                                    key={tooltipKey}
+                                    className="group/prerequisite relative inline-flex outline-none"
+                                    onPointerMove={(event) => {
+                                      if (name && event.pointerType !== "touch") setActivePrerequisite(tooltipKey);
+                                    }}
+                                    onPointerLeave={(event) => {
+                                      if (event.pointerType !== "touch") setActivePrerequisite((current) => current === tooltipKey ? null : current);
+                                    }}
+                                    onPointerUp={(event) => {
+                                      if (name && event.pointerType === "touch") setActivePrerequisite((current) => current === tooltipKey ? null : tooltipKey);
+                                    }}
                                     tabIndex={0}
                                     aria-label={name ? `${code}: ${name}` : code}
                                   >
-                                    <span className="cursor-help font-sans font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors group-hover:decoration-primary group-focus-within:decoration-primary">
+                                    <span className="cursor-help font-sans font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors group-focus-visible/prerequisite:decoration-primary">
                                       {code}
                                     </span>
                                     {name && (
                                       <span
                                         role="tooltip"
-                                        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-64 -translate-x-1/2 whitespace-normal rounded-md border border-border bg-popover px-3 py-2 text-left text-xs leading-5 text-popover-foreground shadow-lg group-hover:block group-focus-within:block"
+                                        className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-64 -translate-x-1/2 whitespace-normal rounded-md border border-border bg-popover px-3 py-2 text-left text-xs leading-5 text-popover-foreground shadow-lg group-focus-visible/prerequisite:block ${activePrerequisite === tooltipKey ? "block" : "hidden"}`}
                                       >
                                         {name}
                                       </span>
@@ -316,8 +305,7 @@ export default function CatalogPage() {
                             </p>
                           )}
                         </div>
-                      )}
-                    </div>
+                    </details>
                   );
                 })}
               </div>
