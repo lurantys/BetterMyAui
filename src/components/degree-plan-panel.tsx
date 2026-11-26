@@ -126,7 +126,8 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   const search = query.trim().toLowerCase();
   for (const row of rows) {
     if (filter !== "All" && row.status !== filter) continue;
-    if (search && ![row.label, row.course, ...row.options].some((value) => value?.toLowerCase().includes(search))) continue;
+    if (search && ![row.label, row.course?.code, row.course?.title, ...row.options.flatMap(({ code, title }) => [code, title])]
+      .some((value) => value?.toLowerCase().includes(search))) continue;
     const category = row.label.split(" / ")[0];
     const group = groups.get(category) ?? [];
     group.push(row);
@@ -208,24 +209,37 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
                       <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{entries.filter((row) => row.status === "Completed").length}/{entries.length}</span>
                     </summary>
                     <ul className="divide-y divide-border border-t border-border bg-background/40 px-3 text-sm">
-                      {entries.map((row, index) => <li key={`${row.label}-${index}`} className="space-y-1 py-3 pl-7">
-                        <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
-                          <span>{row.label.split(" / ").slice(1).join(" / ") || row.course || (row.options.length ? row.options.join(", ") : category)}</span>
+                      {entries.map((row, index) => {
+                        const requirement = row.label.split(" / ").slice(1).join(" / ");
+                        const choices = row.course ? [row.course] : row.status === "Completed" ? [] : row.options;
+                        const heading = requirement || (choices.length !== 1 ? category : null);
+                        return <li key={`${row.label}-${index}`} className="space-y-1 py-3 pl-7">
+                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                          <div className="min-w-0 flex-1 basis-48">
+                            {heading && <p>{heading}</p>}
+                            {choices.length > 0 && <ul className={`space-y-0.5 ${heading ? "mt-1 text-muted-foreground" : ""}`}>
+                              {choices.map(({ code, title }) => <li key={code}>
+                                <span className="font-medium">{code}</span>{title && <span className="text-muted-foreground"> · {title}</span>}
+                              </li>)}
+                            </ul>}
+                          </div>
                           <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                             {row.status === "Completed" && <Check className="size-3.5 text-primary" aria-hidden="true" />}
-                            {row.status}{row.course && ` / ${row.course}`}
+                            {row.status}
                           </span>
                         </div>
-                        {row.status !== "Completed" && !row.course && row.options.length > 0 && row.label.includes(" / ") && <p className="text-sm text-muted-foreground">{row.options.join(", ")}</p>}
                         {row.rule && <p className="text-sm text-muted-foreground">{row.rule}</p>}
-                      </li>)}
+                      </li>;
+                      })}
                     </ul>
                   </details>)}
                   {groups.size === 0 && <p className="p-4 text-sm text-muted-foreground">No matching requirements.</p>}
                 </div>
                 {!!audit.unallocated.length && <details className="motion-details text-sm text-muted-foreground">
                   <summary className="cursor-pointer">{audit.unallocated.length} completed courses without a requirement match</summary>
-                  <p className="mt-2">{audit.unallocated.join(", ")}</p>
+                  <ul className="mt-2 space-y-1">
+                    {audit.unallocated.map(({ code, title }) => <li key={code}>{code}{title && ` · ${title}`}</li>)}
+                  </ul>
                 </details>}
               </>}
             </CardContent>

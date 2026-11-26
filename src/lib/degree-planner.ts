@@ -222,8 +222,14 @@ function frenchPlacementCredit(input: PlannerInput, slots: Slot[], completed: Ma
 }
 
 export function degreeAudit(input: PlannerInput, now = currentTerm()) {
-  const { program, slots, issues, specializations } = assemble(input);
+  const { program, courses, slots, issues, specializations } = assemble(input);
   const { completed, current } = collect(input, now);
+  function describeCourse(key: string, recorded?: StudentCourse) {
+    const catalogEntry = courses.get(key);
+    const code = catalogEntry?.code ?? recorded?.code ?? key.replace(/^(\D+)(\d)/, "$1 $2");
+    const title = [catalogEntry?.title, recorded?.title].find((name) => name?.trim() && courseKey(name) !== key);
+    return { code, title: title ?? null };
+  }
   const placement = frenchPlacementCredit(input, slots, completed);
   const credited = new Map(completed);
   if (placement) credited.set("FRN3210", placement);
@@ -233,9 +239,9 @@ export function degreeAudit(input: PlannerInput, now = currentTerm()) {
     const key = earned.get(index) ?? projected.get(index);
     const course = key ? (earned.has(index) ? credited : current).get(key) : undefined;
     return {
-      label: slot.label, course: course && course !== placement ? course.code : null,
+      label: slot.label, course: key && course && course !== placement ? describeCourse(key, course) : null,
       status: earned.has(index) ? "Completed" : course ? "In progress" : "Remaining",
-      options: slot.keys.size <= 24 ? [...slot.keys].map((code) => code.replace(/^(\D+)(\d)/, "$1 $2")) : [],
+      options: slot.keys.size <= 24 ? [...slot.keys].map((code) => describeCourse(code)) : [],
       rule: placement && course === placement ? "French placement credit assumed." : slot.rules,
     };
   });
@@ -245,7 +251,7 @@ export function degreeAudit(input: PlannerInput, now = currentTerm()) {
     earnedCredits: [...completed].reduce((sum, [key, course]) => sum + (nonDegree.test(key) ? 0 : course.credits), 0),
     assumedPlacementCredits: placement?.credits ?? 0,
     rows, issues, specializations,
-    unallocated: [...completed].filter(([key]) => !allocated.has(key)).map(([, course]) => course.code),
+    unallocated: [...completed].filter(([key]) => !allocated.has(key)).map(([key, course]) => describeCourse(key, course)),
   };
 }
 
