@@ -1,8 +1,7 @@
 import { calculateCumulativeGpa, calculateGpaTotals, calculateTotalCredits, getSemesterStatus, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules } from "@/lib/store";
 
-export function advisorStudentContext(selectedSemester?: { term: string; year: number }) {
+export function advisorStudentContext(selectedSemester?: { term: string; year: number }, planned = loadSchedules()) {
   const profile = loadProfile();
-  const planned = loadSchedules();
   const past = loadPastSchedules();
   const currentSemester = planned.find(({ term, year }) => getSemesterStatus(term, year) === "current");
   const { qualityPoints, gradedCredits } = calculateGpaTotals([...past, ...planned]);

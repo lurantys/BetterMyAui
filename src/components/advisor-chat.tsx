@@ -3,14 +3,14 @@
 import { DegreeDraftCard, DegreeDraftEditor } from "@/components/degree-draft-card";
 import { ScheduleTimeFields } from "@/components/schedule-time-fields";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ArrowUp, Bot, Check, LoaderCircle, Mic, Square, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import type { DegreePlan, DegreePlanSettings } from "@/lib/degree-planner";
-import { mergeDegreePlan } from "@/lib/save-degree-plan";
+import { confirmDegreePlan, loadConfirmedPlan } from "@/lib/save-degree-plan";
 import { Button } from "@/components/ui/button";
 import { advisorStudentContext } from "@/lib/advisor-student-context";
 import { generateId, getCourseColor, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
@@ -89,7 +89,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [semesterDraft, setSemesterDraft] = useState<{ term: string; year: number; courseCodes: string[] } | null>(null);
-  const [degreeDraft, setDegreeDraft] = useState<{ plan: DegreePlan; settings: DegreePlanSettings; deadline: string; assumptions: string; note?: string; totalCredits?: number | number[]; context: string } | null>(null);
+  const [degreeDraft, setDegreeDraft] = useState<{ plan: DegreePlan; settings: DegreePlanSettings; deadline: string; assumptions: string; note?: string; name?: string; totalCredits?: number | number[]; context: string; anchor: Message } | null>(null);
   const [draftTerm, setDraftTerm] = useState("");
   const [draftInput, setDraftInput] = useState("");
   const [draftFeedback, setDraftFeedback] = useState("");
@@ -108,6 +108,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
 
 
   useEffect(() => {
+    if (messages.at(-1)?.inDraft) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scroller = messagesRef.current;
     scroller?.scrollTo({ top: scroller.scrollHeight, behavior: reducedMotion ? "instant" : "smooth" });
@@ -192,16 +193,18 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
         return;
       }
       if (data.semesterDraft) setSemesterDraft(data.semesterDraft);
+      const answer = typeof data.answer === "string" ? data.answer : "";
+      const reply: Message = { role: "assistant", content: answer, inDraft: insideDraft };
       if (data.degreeDraft) {
-        setDegreeDraft({ ...data.degreeDraft, context: studentContext });
+        setDegreeDraft({ ...data.degreeDraft, name: insideDraft ? degreeDraft?.name : undefined,
+          anchor: insideDraft && degreeDraft ? degreeDraft.anchor : reply, context: studentContext });
         if (!insideDraft) {
           setDraftTerm("");
           setDraftFeedback("");
         }
       }
-      if (!data.answer?.trim()) return;
-      if (insideDraft) setDraftFeedback(data.answer);
-      const reply: Message = { role: "assistant", content: data.answer, inDraft: insideDraft };
+      if (!answer.trim() && !data.degreeDraft) return;
+      if (insideDraft) setDraftFeedback(answer);
       replyContexts.current.set(reply, studentContext);
       setMessages((current) => [...current, reply]);
     } catch (err) {
@@ -280,15 +283,16 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
       return;
     }
     try {
-      const updated = mergeDegreePlan(plan, loadSchedules());
-      if (updated.added) {
-        saveSchedules(updated.schedules);
-        onSchedulesApplied?.(updated.schedules);
-      }
+      const profile = loadProfile();
+      if (!degreeDraft || !profile?.major) throw new Error("Set your major in Career before confirming a degree plan.");
+      confirmDegreePlan(profile.major, {
+        plan, settings: degreeDraft.settings, deadline: degreeDraft.deadline,
+        assumptions: degreeDraft.assumptions, note: degreeDraft.note, name: degreeDraft.name?.trim(),
+      }, loadSchedules(), saveSchedules);
+      onSchedulesApplied?.(loadSchedules());
       setDegreeDraft(null);
       setError("");
-      const reply: Message = { role: "assistant", content: updated.added
-        ? `Added ${updated.added} courses to your planned semesters.` : "These courses are already in your plan." };
+      const reply: Message = { role: "assistant", content: "Confirmed plan saved to Career." };
       replyContexts.current.set(reply, advisorStudentContext(selectedSemester));
       setMessages((current) => [...current, reply]);
     } catch (error) {
@@ -408,25 +412,31 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                 </div>
               </div>
             )}
-            {messages.filter((message) => !message.inDraft).map((message, index) => (
-              <div key={`${message.role}-${index}`} className={`advisor-chat-enter group flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`min-w-0 max-w-[94%] break-words text-sm leading-7 sm:max-w-[88%] ${message.role === "user" ? "whitespace-pre-wrap rounded-[1.6rem] bg-accent px-5 py-3 text-foreground" : "text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_li]:ml-5 [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc"}`}>
-                  {message.role === "assistant" ? <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{message.content}</ReactMarkdown> : message.content}
-                </div>
-              </div>
+            {messages.map((message, index) => (
+              <Fragment key={index}>
+                {!message.inDraft && message.content.trim() && (
+                  <div className={`advisor-chat-enter group flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`min-w-0 max-w-[94%] break-words text-sm leading-7 sm:max-w-[88%] ${message.role === "user" ? "whitespace-pre-wrap rounded-[1.6rem] bg-accent px-5 py-3 text-foreground" : "text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_li]:ml-5 [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc"}`}>
+                      {message.role === "assistant" ? <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{message.content}</ReactMarkdown> : message.content}
+                    </div>
+                  </div>
+                )}
+                {degreeDraft?.anchor === message && (
+                  <div className="w-full max-w-2xl">
+                    <DegreeDraftCard plan={degreeDraft.plan} deadline={degreeDraft.deadline}
+                      specialization={degreeDraft.settings.specialization} totalCredits={degreeDraft.totalCredits}
+                      assumptions={degreeDraft.assumptions} note={degreeDraft.note} selectedTerm={draftTerm}
+                      onSelectTerm={setDraftTerm} onSave={applyDegreePlan} onDelete={() => setDegreeDraft(null)} disabled={loading}
+                      saveLabel={loadConfirmedPlan(loadProfile()?.major ?? "") ? "Replace confirmed plan in Career" : "Add courses to Career"}
+                      name={degreeDraft.name} onNameChange={(name) => setDegreeDraft((active) => active ? { ...active, name } : active)}>
+                      <DegreeDraftEditor value={draftInput} onChange={setDraftInput}
+                        onSubmit={() => void sendMessage(undefined, draftInput, true)}
+                        disabled={loading} pending={draftPending} feedback={draftFeedback} />
+                    </DegreeDraftCard>
+                  </div>
+                )}
+              </Fragment>
             ))}
-            {degreeDraft && (
-              <div className="w-full max-w-2xl">
-                <DegreeDraftCard plan={degreeDraft.plan} deadline={degreeDraft.deadline}
-                  specialization={degreeDraft.settings.specialization} totalCredits={degreeDraft.totalCredits}
-                  assumptions={degreeDraft.assumptions} note={degreeDraft.note} selectedTerm={draftTerm}
-                  onSelectTerm={setDraftTerm} onSave={applyDegreePlan} onDelete={() => setDegreeDraft(null)} disabled={loading}>
-                  <DegreeDraftEditor value={draftInput} onChange={setDraftInput}
-                    onSubmit={() => void sendMessage(undefined, draftInput, true)}
-                    disabled={loading} pending={draftPending} feedback={draftFeedback} />
-                </DegreeDraftCard>
-              </div>
-            )}
             {proposal && proposal.length > 0 && (
               <div className="advisor-chat-enter w-full max-w-2xl rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
                 <h3 className="text-sm font-semibold text-foreground">Review your changes</h3>

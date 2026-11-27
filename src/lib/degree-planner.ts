@@ -51,7 +51,7 @@ type Course = PlanCourse & {
   level?: string;
   catalogOnly?: boolean;
 };
-type Slot = { label: string; keys: Set<string>; credits?: number; rules?: string };
+type Slot = { label: string; keys: Set<string>; credits?: number; rules?: string; free?: boolean };
 const programs: Program[] = [bacs, bais, bba, bscsc, bsems, bsge, bsrese];
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 const passed = (grade?: string | null) => !!grade && /^(?:[ABCD][+-]?|P)$/i.test(grade);
@@ -143,7 +143,7 @@ function assemble(input: PlannerInput) {
           && (program.program !== "BSCSC" || key !== "CSC1300")
           && (minorName !== "businessadministration" || key !== "ECO1300")
           && course.level === "undergraduate");
-        slots.push({ label, keys: new Set(keys.map(([key]) => key)), credits });
+        slots.push({ label, keys: new Set(keys.map(([key]) => key)), credits, free: true });
       }
     } else if (group.choose && groups.length) {
       // Placement branches require one course from the applicable pathway.
@@ -391,9 +391,9 @@ export function reviseDegreePlan(input: PlannerInput, plan: DegreePlan, edits: D
       const replacementKey = courseKey(edit.replacementCode);
       const replacement = courses.get(replacementKey);
       if (replacementKey === key) continue;
-      if (!replacement || starting.has(replacementKey) || locations.has(replacementKey)) {
-        throw new Error(`${edit.replacementCode} is unavailable or already accounted for.`);
-      }
+      if (!replacement) throw new Error(`${edit.replacementCode} is absent from the course catalog.`);
+      if (locations.has(replacementKey)) throw new Error(`${replacement.code} is already in the draft and cannot also replace ${course.code}.`);
+      if (starting.has(replacementKey)) throw new Error(`${replacement.code} is already completed or in progress.`);
       origin.selected.delete(key);
       locations.delete(key);
       origin.selected.set(replacementKey, replacement);
@@ -478,6 +478,31 @@ export function reviseDegreePlan(input: PlannerInput, plan: DegreePlan, edits: D
       ...issues, "Confirm future course offerings and any required approvals."])],
     peakCredits: Math.max(0, ...revised.map(({ credits }) => credits)),
     peakCourses: Math.max(0, ...revised.map(({ counted }) => counted)) };
+}
+
+export function replaceWithEquivalentDegreeCourse(input: PlannerInput, plan: DegreePlan, code: string, deadline: string, now = currentTerm()) {
+  const sourceKey = courseKey(code);
+  if (!plan.terms.some(({ courses }) => courses.some((course) => courseKey(course.code) === sourceKey))) {
+    throw new Error(`${code} is absent from the draft.`);
+  }
+  const { slots, courses } = assemble(input);
+  const requirementChoices = slots.filter((slot) => !slot.free && slot.keys.has(sourceKey) && slot.keys.size > 1);
+  if (!requirementChoices.length) throw new Error(`The degree map lists no equivalent courses for ${code}.`);
+
+  const { completed, current } = collect(input, now);
+  const used = new Set([...completed.keys(), ...current.keys(), ...plan.terms.flatMap((term) =>
+    term.courses.map((course) => courseKey(course.code)))]);
+  const options = new Set(requirementChoices.flatMap((slot) => [...slot.keys]));
+  for (const key of options) {
+    const candidate = courses.get(key);
+    if (!candidate || used.has(key)) continue;
+    try {
+      return reviseDegreePlan(input, plan, [{ action: "replace", code, replacementCode: candidate.code }], deadline, now);
+    } catch (error) {
+      if (!(error instanceof Error)) throw error;
+    }
+  }
+  throw new Error(`No unused course for ${requirementChoices.map(({ label }) => label.split(" / ").at(-1)).filter((label, index, labels) => labels.indexOf(label) === index).join(" or ")} fits in this semester under the draft's prerequisites and workload limits.`);
 }
 
 export function moveDegreeCourse(input: PlannerInput, plan: DegreePlan, edit: Extract<DegreePlanEdit, { action: "move" }>, deadline: string, now = currentTerm()) {

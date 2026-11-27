@@ -3,7 +3,7 @@
 import { DegreeDraftCard, DegreeDraftEditor } from "@/components/degree-draft-card";
 import { StyledSelect } from "@/components/ui/styled-select";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Check, ChevronDown, ListChecks, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, BookOpen, Check, CircleCheck, ChevronDown, ListChecks, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,15 +11,16 @@ import { Input } from "@/components/ui/input";
 import type { degreeAudit, makeDegreePlans, DegreePlan, DegreePlanSettings } from "@/lib/degree-planner";
 import type { PlannerInput } from "@/lib/degree-planner";
 import { advisorStudentContext } from "@/lib/advisor-student-context";
-import { MAX_COUNTED_COURSES, MAX_SUMMER_TERMS, semesterLimits } from "@/lib/semester-load";
-import { mergeDegreePlan } from "@/lib/save-degree-plan";
-import { getSemesterStatus, loadPastSchedules, loadProfile, loadSchedules, type SemesterSchedule } from "@/lib/store";
+import { MAX_COUNTED_COURSES, MAX_SUMMER_TERMS } from "@/lib/semester-load";
+import { confirmedPlanKey, confirmDegreePlan, loadConfirmedPlan, schedulesForAlternative } from "@/lib/save-degree-plan";
+import { generateId, getSemesterStatus, loadPastSchedules, loadProfile, loadSchedules, type SemesterSchedule } from "@/lib/store";
 
 type Audit = ReturnType<typeof degreeAudit>;
 type Drafts = ReturnType<typeof makeDegreePlans> & { note: string; specialization?: string; settings?: DegreePlanSettings };
-type SavedDraft = { result: Drafts; key: string; snapshot: string };
+type SavedDraft = { result: Drafts; snapshot: string; id: string; name?: string; };
+type LegacyDraft = Omit<SavedDraft, "id"> & { id?: string; createdAt?: number };
 type DraftWorkspace = {
-  view: "requirements" | "drafts";
+  view: "requirements" | "drafts" | "confirmed";
   selectedTerm: string;
   targetSemesters: string;
   mode: NonNullable<PlannerInput["mode"]>;
@@ -28,10 +29,10 @@ type DraftWorkspace = {
   includeSummer: boolean;
   summerTermLimit: string;
   preferences: string;
-  draft: SavedDraft | null;
+  drafts: SavedDraft[];
 };
 
-function readDraftWorkspace(key: string): Partial<DraftWorkspace> {
+function readDraftWorkspace(key: string): Partial<DraftWorkspace> & { draft?: LegacyDraft; alternatives?: LegacyDraft[] } {
   try {
     return JSON.parse(localStorage.getItem(key) ?? "null") ?? {};
   } catch {
@@ -66,7 +67,14 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   const [summerTermLimit, setSummerTermLimit] = useState(stored.summerTermLimit ?? "all");
   const [preferences, setPreferences] = useState(stored.preferences ?? "");
   const [audit, setAudit] = useState<Audit | null>(null);
-  const [draft, setDraft] = useState<SavedDraft | null>(stored.draft ?? null);
+  const [confirmed, setConfirmed] = useState(() => loadConfirmedPlan(major));
+  const [drafts, setDrafts] = useState<SavedDraft[]>(() => stored.drafts
+    ?? [...(stored.alternatives ?? []), ...(stored.draft ? [stored.draft] : [])]
+      .filter((item) => item.result.plans.length)
+      .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
+      .map((item) => ({ ...item, id: item.id ?? generateId() })));
+  const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
+  const draft = drafts.find(({ id }) => id === expandedDraftId);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editInput, setEditInput] = useState("");
@@ -75,32 +83,37 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   const [auditError, setAuditError] = useState("");
   const [message, setMessage] = useState("");
 
-  const context = JSON.stringify({
-    major, minor, specialization, includeFrench,
-    semesters: [...past, ...calendar].map(({ term, year, courses }) => ({
-      term, year, courses: courses.map(({ code, title, credits, grade }) => ({ code, title, credits, grade })),
-    })),
-  } satisfies PlannerInput);
-  function keyForSettings(summer: boolean, termLimit = summerTermLimit) {
-    const summerRulesApply = summer || calendar.some(({ term, year }) =>
-      term === "summer" && getSemesterStatus(term, year) === "planned");
-    return JSON.stringify([context, targetSemesters, summer, preferences, mode, maxCourses,
-      ...(summerRulesApply ? [semesterLimits("summer"), termLimit] : [])]);
+  function planningContext(schedules: SemesterSchedule[]) {
+    return JSON.stringify({
+      major, minor, specialization, includeFrench,
+      semesters: [...past, ...schedules].map(({ term, year, courses }) => ({
+        term, year, courses: courses.map(({ code, title, credits, grade }) => ({ code, title, credits, grade })),
+      })),
+    } satisfies PlannerInput);
   }
-  const draftKey = keyForSettings(includeSummer);
-  const result = draft?.key === draftKey && draft.result.plans.every((plan) =>
+  const context = planningContext(calendar);
+  const alternativeContext = planningContext(schedulesForAlternative(calendar, confirmed));
+  const result = draft?.result.plans.every((plan) =>
     plan.terms.every(({ term, year }) => getSemesterStatus(term, year) === "planned")) ? draft.result : null;
+
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === confirmedPlanKey(major)) setConfirmed(loadConfirmedPlan(major));
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, [major]);
 
   useEffect(() => {
     if (!major) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify({
-        view, selectedTerm, targetSemesters, mode, maxCourses, includeFrench, includeSummer, summerTermLimit, preferences, draft,
+        view, selectedTerm, targetSemesters, mode, maxCourses, includeFrench, includeSummer, summerTermLimit, preferences, drafts,
       } satisfies DraftWorkspace));
     } catch {
       // The draft remains available in the open page if browser storage is full or unavailable.
     }
-  }, [major, storageKey, view, selectedTerm, targetSemesters, mode, maxCourses, includeFrench, includeSummer, summerTermLimit, preferences, draft]);
+  }, [major, storageKey, view, selectedTerm, targetSemesters, mode, maxCourses, includeFrench, includeSummer, summerTermLimit, preferences, drafts]);
 
   useEffect(() => {
     if (!major) return;
@@ -121,6 +134,18 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
     return () => controller.abort();
   }, [major, context]);
 
+  function baselineSnapshot(schedules = loadSchedules()) {
+    return JSON.stringify([loadProfile(), loadPastSchedules(), schedulesForAlternative(schedules, loadConfirmedPlan(major))]);
+  }
+
+  function toggleDraft(id: string) {
+    setExpandedDraftId((expanded) => expanded === id ? null : id);
+    setSelectedTerm("");
+    setEditInput("");
+    setEditFeedback("");
+    setEditHistory([]);
+  }
+
   async function generate(summer = includeSummer, termLimit = summerTermLimit) {
     if (loading || editing) return;
     const target = Number(targetSemesters);
@@ -133,8 +158,7 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
       setMessage(`Enter a maximum of 1–${MAX_COUNTED_COURSES} counted courses per Fall or Spring term.`);
       return;
     }
-    const requestedKey = keyForSettings(summer, termLimit);
-    const snapshot = JSON.stringify([loadProfile(), loadPastSchedules(), loadSchedules()]);
+    const snapshot = baselineSnapshot();
     setLoading(true);
     setMessage("");
     try {
@@ -142,13 +166,18 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...JSON.parse(context), generate: true, targetSemesters: target, mode, maxCourses: count, includeSummer: summer,
+          ...JSON.parse(alternativeContext), generate: true, targetSemesters: target, mode, maxCourses: count, includeSummer: summer,
           maxSummerTerms: summer && termLimit !== "all" ? Number(termLimit) : undefined, preferences,
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      setDraft({ result: data, key: requestedKey, snapshot });
+      if (data.plans?.length) {
+        setDrafts((items) => [...items, { id: generateId(), result: data, snapshot }]);
+        setExpandedDraftId(null);
+      } else {
+        setMessage([data.assumptions, data.note].filter(Boolean).join(" ") || "No draft is available for these settings.");
+      }
       setEditHistory([]);
       setEditInput("");
       setEditFeedback("");
@@ -162,19 +191,27 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   }
 
   async function requestDraftChange() {
-    const plan = result?.plans[0];
+    const fromConfirmed = view === "confirmed";
+    const source = fromConfirmed && confirmed
+      ? { ...confirmed, plans: [{ ...confirmed.plan, terms: confirmed.plan.terms.filter(({ term, year }) =>
+        getSemesterStatus(term, year) === "planned") }], specialization: confirmed.settings.specialization }
+      : result;
+    const plan = source?.plans[0];
     const request = editInput.trim();
-    if (loading || editing || !plan || !result || !draft || !request) return;
+    if (loading || editing || !plan || !source || !request) return;
     const snapshot = JSON.stringify([loadProfile(), loadPastSchedules(), loadSchedules()]);
-    if (snapshot !== draft.snapshot) {
+    const baseline = baselineSnapshot();
+    if (!fromConfirmed && baseline !== draft?.snapshot) {
       setEditFeedback("Your Career data changed. Generate a new draft before editing.");
       return;
     }
-    const studentContext = advisorStudentContext();
+    const savedConfirmation = JSON.stringify(loadConfirmedPlan(major));
+    const schedules = loadSchedules();
+    const studentContext = advisorStudentContext(undefined, schedulesForAlternative(schedules, confirmed));
     const focused = plan.terms.find(({ term, year }) => `${year}-${term}` === selectedTerm) ?? plan.terms[0];
-    const settings = result.settings ?? {
+    const settings = source.settings ?? {
       mode, maxCourses: Number(maxCourses), targetSemesters: Number(targetSemesters),
-      includeSummer, includeFrench, specialization: result.specialization ?? specialization,
+      includeSummer, includeFrench, specialization: source.specialization ?? specialization,
       maxSummerTerms: includeSummer && summerTermLimit !== "all" ? Number(summerTermLimit) : undefined,
     };
     setEditing(true);
@@ -185,28 +222,37 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: request, history: editHistory, studentContext, editDegreeDraft: true,
-          degreeDraft: { plan, settings, deadline: result.deadline,
+          degreeDraft: { plan, settings, deadline: source.deadline,
             focusedTerm: focused && { term: focused.term, year: focused.year } },
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Could not edit the draft.");
-      if (advisorStudentContext() !== studentContext) {
+      if (snapshot !== JSON.stringify([loadProfile(), loadPastSchedules(), loadSchedules()])
+        || savedConfirmation !== JSON.stringify(loadConfirmedPlan(major))) {
         setEditFeedback("Your Career data changed while Advisor was editing. Generate a new draft.");
         return;
       }
       const updated = data.degreeDraft;
       const answer = data.answer?.trim() || "No draft change was returned.";
       if (updated) {
-        setDraft({ ...draft, result: {
+        const editedResult: Drafts = {
           plans: [updated.plan], settings: updated.settings, specialization: updated.settings.specialization,
           deadline: updated.deadline, assumptions: updated.assumptions, note: updated.note ?? "",
-        } });
+        };
+        if (fromConfirmed) {
+          const id = generateId();
+          setDrafts((items) => [...items, { id, name: confirmed?.name, snapshot: baseline, result: editedResult }]);
+          setExpandedDraftId(id);
+          setView("drafts");
+        } else if (draft) {
+          setDrafts((items) => items.map((item) => item.id === draft.id ? { ...item, result: editedResult } : item));
+        }
       }
       setEditHistory((history) => [...history, { role: "user" as const, content: request },
         { role: "assistant" as const, content: answer }].slice(-10));
       setEditInput("");
-      setEditFeedback(answer);
+      setEditFeedback(fromConfirmed && updated ? `${answer} Review the draft before replacing your confirmed plan.` : answer);
     } catch (error) {
       setEditFeedback(error instanceof Error ? error.message : "Could not edit the draft.");
     } finally {
@@ -216,12 +262,13 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
 
   function changeSummer(include: boolean) {
     setIncludeSummer(include);
-    if (draft) void generate(include);
+    if (drafts.length) void generate(include);
   }
 
   function deleteDraft(plan: DegreePlan) {
-    if (!draft || draft.key !== draftKey) return;
-    setDraft(null);
+    if (!draft) return;
+    setDrafts((items) => items.filter(({ id }) => id !== draft.id));
+    setExpandedDraftId(null);
     setEditHistory([]);
     setEditInput("");
     setEditFeedback("");
@@ -230,17 +277,40 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
 
   function save(plan: DegreePlan) {
     const schedules = loadSchedules();
-    if (!draft || draft.key !== draftKey || draft.snapshot !== JSON.stringify([loadProfile(), loadPastSchedules(), schedules])) {
+    if (!draft || !result || draft.snapshot !== baselineSnapshot(schedules)
+      || JSON.stringify(confirmed) !== JSON.stringify(loadConfirmedPlan(major))) {
       setMessage("Your Career data changed. Generate a new draft before saving.");
       return;
     }
     try {
-      const updated = mergeDegreePlan(plan, schedules);
-      if (updated.added) onSave(updated.schedules);
-      setMessage(updated.added ? `Added ${updated.added} courses to your planned semesters.` : "These courses are already in your plan.");
-      setDraft(null);
+      const updated = confirmDegreePlan(major, { plan, name: draft.name?.trim(), deadline: result.deadline,
+        assumptions: result.assumptions, note: result.note,
+        settings: result.settings ?? { mode, maxCourses: Number(maxCourses), targetSemesters: Number(targetSemesters),
+          includeFrench, includeSummer, maxSummerTerms: summerTermLimit === "all" ? undefined : Number(summerTermLimit),
+          specialization: result.specialization ?? specialization },
+      }, schedules, onSave);
+      setConfirmed(updated.confirmed);
+      setMessage("Confirmed plan saved to Career.");
+      setDrafts((items) => items.filter(({ id }) => id !== draft.id));
+      setExpandedDraftId(null);
+      setEditInput("");
+      setEditFeedback("");
+      setEditHistory([]);
+      setView("confirmed");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save the draft.");
+    }
+  }
+
+  function renameConfirmedPlan(name: string) {
+    if (!confirmed) return;
+    try {
+      if (JSON.stringify(confirmed) !== JSON.stringify(loadConfirmedPlan(major))) return;
+      const renamed = { ...confirmed, name };
+      localStorage.setItem(confirmedPlanKey(major), JSON.stringify(renamed));
+      setConfirmed(renamed);
+    } catch {
+      setMessage("Could not save the plan name.");
     }
   }
 
@@ -294,13 +364,22 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
       </Card>}
 
       <div className="flex flex-wrap gap-1" role="group" aria-label="Degree plan views">
-        <button type="button" aria-pressed={view === "requirements"} onClick={() => setView("requirements")}
+        <button type="button" aria-pressed={view === "requirements"} onClick={() => setView("requirements")} disabled={editing}
           className={`inline-flex items-center gap-2 ${segment} ${view === "requirements" ? activeSegment : inactiveSegment}`}>
           <ListChecks className="size-4" aria-hidden="true" /> Requirements
         </button>
-        <button type="button" aria-pressed={view === "drafts"} onClick={() => setView("drafts")}
+        <button type="button" aria-pressed={view === "drafts"} onClick={() => setView("drafts")} disabled={editing}
           className={`inline-flex items-center gap-2 ${segment} ${view === "drafts" ? activeSegment : inactiveSegment}`}>
-          <BookOpen className="size-4" aria-hidden="true" /> Plan draft
+          <BookOpen className="size-4" aria-hidden="true" /> Plan drafts
+        </button>
+        <button type="button" aria-pressed={view === "confirmed"} onClick={() => {
+          setEditInput("");
+          setEditFeedback("");
+          setEditHistory([]);
+          setView("confirmed");
+        }} disabled={editing}
+          className={`inline-flex items-center gap-2 ${segment} ${view === "confirmed" ? activeSegment : inactiveSegment}`}>
+          <CircleCheck className="size-4" aria-hidden="true" /> Confirmed plan
         </button>
       </div>
 
@@ -368,14 +447,54 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
                 </details>}
               </>}
             </CardContent>
-          </Card> : result ? result.plans[0] ? (
-            <DegreeDraftCard plan={result.plans[0]} deadline={result.deadline} specialization={result.specialization}
-              totalCredits={audit?.totalCredits} assumptions={result.assumptions} note={result.note}
-              selectedTerm={selectedTerm} onSelectTerm={setSelectedTerm} onSave={save} onDelete={deleteDraft} disabled={loading || editing}>
+          </Card> : view === "confirmed" ? confirmed ? (
+            <DegreeDraftCard confirmed plan={confirmed.plan} deadline={confirmed.deadline}
+              specialization={confirmed.settings.specialization} totalCredits={audit?.totalCredits}
+              assumptions={confirmed.assumptions} note={confirmed.note} selectedTerm={selectedTerm} onSelectTerm={setSelectedTerm} name={confirmed.name} onNameChange={renameConfirmedPlan} disabled={loading || editing}>
               <DegreeDraftEditor value={editInput} onChange={setEditInput} onSubmit={() => void requestDraftChange()}
                 disabled={loading || editing} pending={editing} feedback={editFeedback} />
             </DegreeDraftCard>
-          ) : <p role="status" className="text-sm text-muted-foreground">{result.assumptions} {result.note}</p> : <Card><CardContent className="space-y-3 p-5 text-sm text-muted-foreground">
+          ) : <Card><CardContent className="space-y-3 p-5 text-sm text-muted-foreground">
+            <p>Add a draft to Career to see your confirmed plan here.</p>
+            <Button type="button" variant="outline" onClick={() => setView("drafts")}>Open plan drafts</Button>
+          </CardContent></Card> : drafts.length ? (
+            <section aria-label="Saved drafts">
+              <ul className="space-y-3">
+                {drafts.map((item, index) => {
+                  const open = item.id === expandedDraftId;
+                  const plan = item.result.plans[0];
+                  const panelId = `degree-draft-${item.id}`;
+                  return <li key={item.id} className="overflow-hidden rounded-lg border border-border bg-card">
+                    <button type="button" aria-expanded={open} aria-controls={panelId} disabled={loading || editing}
+                      onClick={() => toggleDraft(item.id)}
+                      className="flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30">
+                      <BookOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{item.name?.trim() || `Draft ${index + 1}`}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {[item.result.specialization ?? plan?.label, plan?.finish].filter(Boolean).join(" / ")}
+                        </span>
+                      </span>
+                      <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+                    </button>
+                    <div id={panelId} hidden={!open} className="border-t border-border p-3 sm:p-4">
+                      {open && (result && plan ? (
+                        <DegreeDraftCard plan={plan} deadline={result.deadline} specialization={result.specialization}
+                          totalCredits={audit?.totalCredits} assumptions={result.assumptions} note={result.note}
+                          selectedTerm={selectedTerm} onSelectTerm={setSelectedTerm} onSave={save} onDelete={deleteDraft}
+                          disabled={loading || editing} saveLabel={confirmed ? "Replace confirmed plan in Career" : "Add courses to Career"}
+                          name={item.name} onNameChange={(name) => setDrafts((items) =>
+                            items.map((entry) => entry.id === item.id ? { ...entry, name } : entry))}>
+                          <DegreeDraftEditor value={editInput} onChange={setEditInput} onSubmit={() => void requestDraftChange()}
+                            disabled={loading || editing} pending={editing} feedback={editFeedback} />
+                        </DegreeDraftCard>
+                      ) : <p className="text-sm text-muted-foreground">A semester in this draft has already started. Generate a new draft to update your plan.</p>)}
+                    </div>
+                  </li>;
+                })}
+              </ul>
+            </section>
+          ) : <Card><CardContent className="space-y-3 p-5 text-sm text-muted-foreground">
             <p>{loading ? "Building your degree plan..." : "Generate a degree plan to see your term workloads and projected finish date."}</p>
             {!loading && <a href="#plan-settings" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
               Plan settings <ArrowRight className="size-3.5" aria-hidden="true" />
@@ -419,7 +538,7 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
                   }))]}
                   onValueChange={(value) => {
                     setSummerTermLimit(value);
-                    if (draft) void generate(true, value);
+                    if (drafts.length) void generate(true, value);
                   }} />
               </label>}
               <PlanCheckbox checked={includeFrench} onChange={setIncludeFrench} label="Include French courses" />

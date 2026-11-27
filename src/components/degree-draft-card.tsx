@@ -17,14 +17,18 @@ type Props = {
   note?: string;
   selectedTerm: string;
   onSelectTerm: (term: string) => void;
-  onSave: (plan: DegreePlan) => void;
-  onDelete: (plan: DegreePlan) => void;
+  onSave?: (plan: DegreePlan) => void;
+  onDelete?: (plan: DegreePlan) => void;
+  saveLabel?: string;
+  confirmed?: boolean;
+  name?: string;
+  onNameChange?: (name: string) => void;
   disabled?: boolean;
   children?: React.ReactNode;
 };
 
 export function DegreeDraftCard({ plan, deadline, specialization, totalCredits, assumptions, note,
-  selectedTerm, onSelectTerm, onSave, onDelete, disabled, children }: Props) {
+  selectedTerm, onSelectTerm, onSave, onDelete, saveLabel = "Add courses to Career", confirmed, name, onNameChange, disabled, children }: Props) {
   const keyForTerm = ({ term, year }: { term: string; year: number }) => `${year}-${term}`;
   const term = plan.terms.find((item) => keyForTerm(item) === selectedTerm) ?? plan.terms[0];
   const creditLimit = semesterLimits(term?.term).credits;
@@ -32,7 +36,7 @@ export function DegreeDraftCard({ plan, deadline, specialization, totalCredits, 
   return (
     <div className="motion-enter w-full min-w-0 space-y-3" aria-live="polite">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">Plan draft</h2>
+        <h2 className="text-lg font-semibold">{confirmed ? "Confirmed plan" : "Plan draft"}</h2>
         <p className="text-sm text-muted-foreground">Target finish: {deadline}{specialization && ` / ${specialization}`}</p>
       </div>
       {plan.terms.length > 0 && <div className="flex flex-wrap gap-1.5" role="group" aria-label="Planned semesters">
@@ -44,7 +48,10 @@ export function DegreeDraftCard({ plan, deadline, specialization, totalCredits, 
       </div>}
       <Card className="min-w-0">
         <CardHeader className="space-y-1.5 pb-3">
-          <CardTitle>{plan.label}</CardTitle>
+          <CardTitle>{onNameChange ? <input aria-label={confirmed ? "Confirmed plan name" : "Draft name"}
+            placeholder={plan.label} value={name ?? ""} onChange={(event) => onNameChange(event.target.value)}
+            maxLength={80} disabled={disabled} className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30" />
+            : name || plan.label}</CardTitle>
           <p className="text-sm text-muted-foreground">{plan.finish
             ? `${plan.finish}${plan.withinTarget ? "" : " (after target)"}`
             : "Finish pending review"}</p>
@@ -79,11 +86,11 @@ export function DegreeDraftCard({ plan, deadline, specialization, totalCredits, 
             <ul className="mt-2 list-disc space-y-1 pl-4">{plan.review.map((note) => <li key={note}>{note}</li>)}</ul>
           </details>}
           <div className="flex flex-wrap items-center gap-2">
-            {!!plan.terms.length && <Button type="button" variant="outline" onClick={() => onSave(plan)} disabled={disabled || !plan.canSave}>Add courses to Career</Button>}
-            <Button type="button" variant="ghost" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            {onSave && !!plan.terms.length && <Button type="button" variant="outline" onClick={() => onSave(plan)} disabled={disabled || !plan.canSave}>{saveLabel}</Button>}
+            {onDelete && <Button type="button" variant="ghost" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               aria-label={`Delete ${plan.label.toLowerCase()} draft`} onClick={() => onDelete(plan)} disabled={disabled}>
               <Trash2 className="size-4" aria-hidden="true" /> Delete draft
-            </Button>
+            </Button>}
           </div>
           {children}
         </CardContent>

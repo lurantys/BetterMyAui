@@ -195,3 +195,40 @@ test("An explicit AI specialization request generates a draft over the saved spe
   assert.equal(degreeDraft.settings.maxCourses, 5);
   assert.equal(degreeDraft.settings.maxSummerTerms, 1);
 });
+
+test("Equivalent degree-plan edits keep the semester and requirement without duplicating courses", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-11-27T12:00:00Z") });
+  const apiKey = process.env.NVIDIA_API_KEY;
+  process.env.NVIDIA_API_KEY = "regression-test";
+  t.after(() => {
+    if (apiKey === undefined) delete process.env.NVIDIA_API_KEY;
+    else process.env.NVIDIA_API_KEY = apiKey;
+  });
+  const responses = [
+    { action: "revise", edits: [{ action: "move", code: "HIS 1301", term: "spring", year: 2028 }] },
+    { action: "revise", equivalentFor: "HIS 1301" },
+  ];
+  const model = t.mock.method(globalThis, "fetch", async () => Response.json({ choices: [{ message: { tool_calls: [{
+    function: { name: "plan_degree", arguments: JSON.stringify(responses.shift()) },
+  }] } }] }));
+  const semester = { term: "spring", year: 2028, courses: ["ART 1301", "HIS 1301"].map((code) => ({
+    code, title: code, credits: 3, prerequisite_courses: [],
+  })) };
+  const response = await POST(new Request("http://localhost/api/advisor", {
+    method: "POST",
+    body: JSON.stringify({
+      message: "change HIS 1301 to an equivalent course",
+      studentContext: JSON.stringify({ profile: { major: "Computer Science", specialization: "Software Engineering" },
+        completedSemesters: [{ term: "spring", year: 2026, courses: ["FAS 1220", "ENG 1301"].map((code) => ({ code, credits: 3, grade: "A" })) }],
+      }),
+      editDegreeDraft: true,
+      degreeDraft: { settings: { mode: "earlier" }, deadline: "Fall 2028", plan: { terms: [semester], review: [] } },
+    }),
+  }));
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.match(data.answer, /Replaced HIS 1301 with HIS 2301/);
+  assert.deepEqual(data.degreeDraft.plan.terms[0].courses.map(({ code }: { code: string }) => code), ["ART 1301", "HIS 2301"]);
+  assert.equal(data.degreeDraft.plan.terms[0].credits, 6);
+  assert.equal(model.mock.callCount(), 2);
+});
