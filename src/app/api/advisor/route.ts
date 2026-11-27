@@ -390,6 +390,9 @@ export async function POST(request: Request) {
   const targetCredits = Number(message.match(creditPattern)?.[1]
     ?? [...history].reverse().filter((item) => item.role === "user").map((item) => item.content.match(creditPattern)?.[1]).find(Boolean) ?? 0);
   const refersToDraft = /\b(?:in|from|on|to) (?:the|this|that|my) (?:semester )?draft\b/i.test(message);
+  const semesterDeletionRequested = !body.editDegreeDraft && !refersToDraft
+    && /\b(?:delete|remove|clear)\b[^.!?]*\b(?:semesters?|terms?)\b/i.test(message)
+    && !/\b(?:courses?|classes?)\s+(?:from|in|for)\b/i.test(message);
   const requestsScheduleEdit = !refersToDraft && ( /\b(?:add|remove|save|apply)\b/i.test(message)
     || /\b(?:edit|update|change)\b[\s\S]*\b(?:times?|timings?|meetings?|schedule)\b/i.test(message)
     || /\bplan\s+(?:it|this|that|them)\b[\s\S]*\b(?:in|into|for|to)\b[\s\S]*\b(?:planned|schedule|spring|summer|fall|semester)\b/i.test(message)
@@ -583,8 +586,12 @@ export async function POST(request: Request) {
           model: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3.5-bolt-e4b",
           messages: [
             { role: "system", content: `Use the following saved Career data for all Advisor tools and answers. The profile, completed and planned courses, grades, GPA, and selected semester apply even when the student did not repeat them in chat. Student Career data: ${JSON.stringify(advisorStudentContext)}. Available specializations for the student's program: ${JSON.stringify(degreeSpecializations)}.` },
-            { role: "system", content: `Choose a tool based on the student's intent, regardless of phrasing. Use plan_degree for a plan spanning multiple terms through graduation or any change to the active degree draft. Use recommend_semester for one new term, save_semester_draft when asked to save the active semester draft, revise_semester to change the last single-semester recommendation while retaining other draft courses, and propose_planned_changes for changes to already saved Career data. These tool scopes take priority over instructions about a single semester below. For a small change to the active draft, use revise. When the student requests an equivalent or substitute for a named course and leaves the replacement unspecified, set equivalentFor to the course code already in the draft. The planner will find an unused course satisfying the same requirement. Use a replace edit only when the student specifies both courses. When the student wants a named elective in a specific term, use the elective field and omit edits. When they say swap, switch, or replace something from a term to make room, preserve required courses and put the named displaced course in swapWith. Use prior messages to resolve follow-ups like "switch it". Never use an elective to delete a required course. Internship belongs in Fall and must precede Capstone Design, which belongs in the final term. For direct moves or same-term replacements, use edits. If the student asks to make a term heavier by moving an unspecified course, set heavierTerm. Use the focused term when they say this semester from the draft card. Never just regenerate for a targeted move. For a new planning style, timeline, or other settings change, use generate with keepDraftSettings true. The app reads explicit settings from the student's message. Do not invent any target date, workload, or language preferences. For a fresh plan or a change of specialization, use generate. Interpret what the student means from the wording and context. For any request to generate a degree plan, call plan_degree in the same response once the request is clear. Match abbreviations, synonyms, and references to the program's available specializations by meaning. A clear specialization in the latest request takes precedence over the saved or draft specialization. Use the saved specialization if neither the request nor active draft supplies one. A mismatch between the explicit request and saved settings is not ambiguity and does not require confirmation. Keep active draft settings unless the student asks to start over. Ask only if information essential to building the draft is genuinely missing or ambiguous. A draft specialization does not change the saved Career profile. Never apply changes to Career from a draft without the student's save action. ${body.editDegreeDraft ? "This request was submitted from the active draft card. Keep it scoped to that draft." : ""} Active single-semester recommendation: ${JSON.stringify(previousPlan)}. Catalog matches explicitly named by the student: ${JSON.stringify(namedCatalogCourses)}. For a targeted swap, pass the named catalog code to revise_semester even if it is outside the default degree requirement options. The app validates prerequisites and workload.\nActive degree draft: ${priorDraft ? JSON.stringify({ settings: readDegreeSettings(priorDraft.settings), deadline: priorDraft.deadline, focusedTerm: priorDraft.focusedTerm, terms: priorDraft.plan.terms.map(({ term, year, courses }) => ({ term, year, courses: courses.map(({ code, title }) => ({ code, title })) })) }) : "none"}` },
-            ...(body.editDegreeDraft && priorDraft ? [
+            { role: "system", content: `Choose a tool based on the student's intent, regardless of phrasing. Use plan_degree for a plan spanning multiple terms through graduation or any change to the active degree draft. Use recommend_semester for one new term, save_semester_draft when asked to save the active semester draft, revise_semester to change the last single-semester recommendation while retaining other draft courses, delete_planned_semesters to delete entire saved future semesters, and propose_planned_changes for other changes to already saved Career data. Whole-semester deletion must use the range tool, including when a semester contains no courses. These tool scopes take priority over instructions about a single semester below. For a small change to the active draft, use revise. When the student requests an equivalent or substitute for a named course and leaves the replacement unspecified, set equivalentFor to the course code already in the draft. The planner will find an unused course satisfying the same requirement. Use a replace edit only when the student specifies both courses. When the student wants a named elective in a specific term, use the elective field and omit edits. When they say swap, switch, or replace something from a term to make room, preserve required courses and put the named displaced course in swapWith. Use prior messages to resolve follow-ups like "switch it". Never use an elective to delete a required course. Internship belongs in Fall and must precede Capstone Design, which belongs in the final term. For direct moves or same-term replacements, use edits. If the student asks to make a term heavier by moving an unspecified course, set heavierTerm. Use the focused term when they say this semester from the draft card. Never just regenerate for a targeted move. For a new planning style, timeline, or other settings change, use generate with keepDraftSettings true. The app reads explicit settings from the student's message. Do not invent any target date, workload, or language preferences. For a fresh plan or a change of specialization, use generate. Interpret what the student means from the wording and context. For any request to generate a degree plan, call plan_degree in the same response once the request is clear. Match abbreviations, synonyms, and references to the program's available specializations by meaning. A clear specialization in the latest request takes precedence over the saved or draft specialization. Use the saved specialization if neither the request nor active draft supplies one. A mismatch between the explicit request and saved settings is not ambiguity and does not require confirmation. Keep active draft settings unless the student asks to start over. Ask only if information essential to building the draft is genuinely missing or ambiguous. A draft specialization does not change the saved Career profile. Never apply changes to Career from a draft without the student's save action. ${body.editDegreeDraft ? "This request was submitted from the active draft card. Keep it scoped to that draft." : ""} Active single-semester recommendation: ${JSON.stringify(previousPlan)}. Catalog matches explicitly named by the student: ${JSON.stringify(namedCatalogCourses)}. For a targeted swap, pass the named catalog code to revise_semester even if it is outside the default degree requirement options. The app validates prerequisites and workload.\nActive degree draft: ${priorDraft ? JSON.stringify({ settings: readDegreeSettings(priorDraft.settings), deadline: priorDraft.deadline, focusedTerm: priorDraft.focusedTerm, terms: priorDraft.plan.terms.map(({ term, year, courses }) => ({ term, year, courses: courses.map(({ code, title }) => ({ code, title })) })) }) : "none"}` },
+            ...(semesterDeletionRequested ? [
+              { role: "system", content: "The student is requesting a whole-semester deletion. Use delete_planned_semesters with the inclusive range. Use the same start and end for one term. The app lists the affected saved future semesters for confirmation. " + revisionFeedback },
+              ...history,
+              { role: "user", content: message },
+            ] : body.editDegreeDraft && priorDraft ? [
               { role: "system", content: `Revise the active draft. When the user asks for an equivalent or substitute without naming the new course, call plan_degree with {"action":"revise","equivalentFor":"<code of course being replaced>"}. Omit edits for that operation. Use a move edit only for relocation to a different semester. For a heavier workload use heavierTerm and the focused semester. Use elective for a named new elective in a specific term. Resolve references using history. ${revisionFeedback}` },
               ...history,
               { role: "user", content: message },
@@ -621,6 +628,17 @@ export async function POST(request: Request) {
           stream: false,
           chat_template_kwargs: { enable_thinking: false },
           tools: [{ type: "function", function: {
+            name: "delete_planned_semesters",
+            description: "Prepare a review card to delete entire future semesters from Career across an inclusive term range. Use only when explicitly requested. For a single semester, set start and end to the same term.",
+            parameters: {
+              type: "object",
+              properties: Object.fromEntries(["start", "end"].map((bound) => [bound, {
+                type: "object", properties: { term: { type: "string", enum: termNames }, year: { type: "integer" } },
+                required: ["term", "year"], additionalProperties: false,
+              }])),
+              required: ["start", "end"], additionalProperties: false,
+            },
+          } }, { type: "function", function: {
             name: "save_semester_draft",
             description: "Prepare a Career confirmation card for the active semester draft without changing its term or courses. Call only when the student explicitly asks to save or apply that draft.",
             parameters: { type: "object", properties: {}, additionalProperties: false },
@@ -702,6 +720,42 @@ export async function POST(request: Request) {
 
       const data = await response.json();
       const assistantMessage = data.choices?.[0]?.message;
+      const deletion = assistantMessage?.tool_calls?.find((call: { function?: { name?: string } }) => call.function?.name === "delete_planned_semesters");
+      if (deletion && semesterDeletionRequested) {
+        try {
+          const { start, end } = JSON.parse(deletion.function.arguments);
+          const suppliedBounds = [start, end];
+          const namedTerms = [...message.matchAll(/\b(spring|summer|fall)\s+(20\d{2})\b/gi)];
+          if (suppliedBounds.some((bound) => !bound || !termNames.includes(bound.term)
+            || !Number.isInteger(bound.year) || bound.year < 2020 || bound.year > 2100)
+            || namedTerms.length > 2
+            || namedTerms.some((term, index) => suppliedBounds[index].term !== term[1].toLowerCase() || suppliedBounds[index].year !== Number(term[2]))
+            || (namedTerms.length === 1 && termIndex(start.term, start.year) !== termIndex(end.term, end.year))) {
+            return NextResponse.json({ answer: "Which first and last semesters should I delete? Include their years." });
+          }
+          const first = termIndex(start.term, start.year);
+          const last = termIndex(end.term, end.year);
+          if (first > last) return NextResponse.json({ answer: "The first semester must come before the last semester." });
+          const affected = (studentData.plannedSemesters ?? [])
+            .filter(({ term, year }) => {
+              const index = termIndex(term, year);
+              return index > today && index >= first && index <= last;
+            }).sort((a, b) => termIndex(a.term, a.year) - termIndex(b.term, b.year));
+          if (!affected.length) return NextResponse.json({ answer: "There are no saved planned semesters in that range." });
+          return NextResponse.json({ answer: "", proposal: affected.map(({ term, year, courses }) => ({
+            action: "delete_semester", term, year, courseCount: courses?.length ?? 0,
+          })) });
+        } catch {
+          return NextResponse.json({ answer: "Which first and last semesters should I delete? Include their years." });
+        }
+      }
+      if (semesterDeletionRequested && (assistantMessage?.tool_calls?.length || termPattern.test(message))) {
+        if (attempt < 2) {
+          revisionFeedback = "Use delete_planned_semesters for the requested range. The review card will ask for confirmation.";
+          continue;
+        }
+        return NextResponse.json({ answer: "I couldn't prepare the semester deletion. Try specifying the first and last semesters with their years." });
+      }
       const degreeCall = assistantMessage?.tool_calls?.find((call: { function?: { name?: string } }) => call.function?.name === "plan_degree");
       if (degreeCall) {
         if (!degreeProgram) return NextResponse.json({ answer: "Set a supported major in My Career to generate a degree plan." });

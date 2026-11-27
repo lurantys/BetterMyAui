@@ -13,10 +13,10 @@ import type { DegreePlan, DegreePlanSettings } from "@/lib/degree-planner";
 import { confirmDegreePlan, loadConfirmedPlan } from "@/lib/save-degree-plan";
 import { Button } from "@/components/ui/button";
 import { advisorStudentContext } from "@/lib/advisor-student-context";
-import { generateId, getCourseColor, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
+import { generateId, getCourseColor, getSemesterStatus, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
 
 interface Message { role: "user" | "assistant"; content: string; inDraft?: boolean }
-interface ProposedChange { action: "add" | "remove" | "update_meeting" | "set_grade" | "set_major" | "set_minor"; term?: "fall" | "spring" | "summer"; year?: number; code?: string; title?: string; credits?: number; conditionalOn?: string[]; grade?: string; value?: string; daysOfWeek?: number[]; startTime?: string; endTime?: string; location?: string }
+interface ProposedChange { action: "delete_semester" | "add" | "remove" | "update_meeting" | "set_grade" | "set_major" | "set_minor"; term?: "fall" | "spring" | "summer"; year?: number; code?: string; title?: string; credits?: number; courseCount?: number; conditionalOn?: string[]; grade?: string; value?: string; daysOfWeek?: number[]; startTime?: string; endTime?: string; location?: string }
 interface MinorCandidate { name: string; matchedCourses: number; matchedRequiredCourses: number; evidenceCourses: string[]; confidence: "strong" | "possible" }
 interface SpeechResultEvent { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }
 interface SpeechRecognitionLike {
@@ -308,6 +308,29 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
       setError("Your Career data changed. Ask the Advisor to refresh the proposal.");
       return;
     }
+    const semesterDeletions = changes.filter(({ action }) => action === "delete_semester");
+    if (semesterDeletions.length) {
+      const schedules = loadSchedules();
+      if (semesterDeletions.length !== changes.length || semesterDeletions.some(({ term, year }) =>
+        !term || year === undefined || getSemesterStatus(term, year) !== "planned"
+        || !schedules.some((semester) => semester.term === term && semester.year === year))) {
+        setError("The planned semesters changed. Ask Advisor to refresh the proposal.");
+        return;
+      }
+      try {
+        const next = schedules.filter((semester) => !semesterDeletions.some(({ term, year }) => semester.term === term && semester.year === year));
+        saveSchedules(next);
+        onSchedulesApplied?.(next);
+        setError("");
+        setProposal(null);
+        const reply: Message = { role: "assistant", content: `Deleted ${semesterDeletions.length} planned ${semesterDeletions.length === 1 ? "semester" : "semesters"} from Career.` };
+        replyContexts.current.set(reply, advisorStudentContext(selectedSemester));
+        setMessages((current) => [...current, reply]);
+      } catch {
+        setError("Could not save the semester deletions.");
+      }
+      return;
+    }
     if (changes.some((change) => (change.action === "add" || change.action === "update_meeting") && Boolean(change.startTime) !== Boolean(change.endTime))) {
       setError("Enter both a start and end time, or leave both blank.");
       return;
@@ -446,7 +469,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                     {!!change.conditionalOn?.length && (
                       <p className="mb-2 text-xs text-muted-foreground">Requires passing {change.conditionalOn.join(", ")} before this semester.</p>
                     )}
-                    <p className="text-xs text-muted-foreground">{(change.action === "add" || change.action === "update_meeting") ? <>{change.action === "add" ? "Add" : "Update meeting for"} <span className="font-mono text-foreground">{change.code}</span> ({change.credits} cr) — {change.term} {change.year}</> : change.action === "remove" ? <>Remove <span className="font-mono text-foreground">{change.code}</span> — {change.term} {change.year}</> : change.action === "set_grade" ? <>Set grade for <span className="font-mono text-foreground">{change.code}</span> — {change.term} {change.year} to <strong className="text-foreground">{change.grade}</strong></> : <>Set {change.action === "set_major" ? "major" : "minor"} to <strong className="text-foreground">{change.value}</strong></>}</p>
+                    <p className="text-xs text-muted-foreground">{change.action === "delete_semester" ? <>Delete <strong className="capitalize text-foreground">{change.term} {change.year}</strong> and its {change.courseCount ?? 0} courses</> : (change.action === "add" || change.action === "update_meeting") ? <>{change.action === "add" ? "Add" : "Update meeting for"} <span className="font-mono text-foreground">{change.code}</span> ({change.credits} cr) — {change.term} {change.year}</> : change.action === "remove" ? <>Remove <span className="font-mono text-foreground">{change.code}</span> — {change.term} {change.year}</> : change.action === "set_grade" ? <>Set grade for <span className="font-mono text-foreground">{change.code}</span> — {change.term} {change.year} to <strong className="text-foreground">{change.grade}</strong></> : <>Set {change.action === "set_major" ? "major" : "minor"} to <strong className="text-foreground">{change.value}</strong></>}</p>
                     {(change.action === "add" || change.action === "update_meeting") && <div className="mt-3 space-y-3">
                       <div><p className="mb-1.5 text-xs font-medium text-muted-foreground">Meeting days <span className="font-normal">(optional)</span></p><div className="flex flex-wrap gap-1.5">
                         {[{ day: 1, label: "Mon" }, { day: 2, label: "Tue" }, { day: 3, label: "Wed" }, { day: 4, label: "Thu" }, { day: 5, label: "Fri" }].map(({ day, label }) => <button type="button" key={day} onClick={() => setProposal((current) => (current ?? []).map((item, itemIndex) => itemIndex !== index ? item : { ...item, daysOfWeek: item.daysOfWeek?.includes(day) ? item.daysOfWeek.filter((value) => value !== day) : [...(item.daysOfWeek ?? []), day] }))} className={`rounded-md border px-2 py-1 text-xs ${(change.daysOfWeek ?? []).includes(day) ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground"}`}>{label}</button>)}
@@ -465,7 +488,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                   </div>)}
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Button size="sm" onClick={applyProposal}><Check className="mr-1.5 h-4 w-4" />Apply changes</Button>
+                  <Button size="sm" onClick={applyProposal}><Check className="mr-1.5 h-4 w-4" />{proposal[0].action === "delete_semester" ? "Delete planned semesters" : "Apply changes"}</Button>
                   <Button size="sm" variant="outline" onClick={() => setProposal(null)}><X className="mr-1.5 h-4 w-4" />Discard</Button>
                 </div>
               </div>
