@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,5 +90,33 @@ export function DegreeDraftCard({ plan, deadline, specialization, totalCredits, 
       </Card>
       <p className="text-sm text-muted-foreground">{assumptions} {note}</p>
     </div>
+  );
+}
+
+export function DegreeDraftEditor({ value, onChange, onSubmit, disabled, pending, feedback }: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  disabled: boolean;
+  pending: boolean;
+  feedback: string;
+}) {
+  const id = useId();
+  return (
+    <form className="space-y-2 border-t border-border pt-3" onSubmit={(event) => {
+      event.preventDefault();
+      if (!disabled && value.trim()) onSubmit();
+    }}>
+      <label htmlFor={id} className="text-sm font-medium">Adjust this draft</label>
+      <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
+        <input id={id} value={value} onChange={(event) => onChange(event.target.value)}
+          placeholder="e.g. Move Chemistry to Spring 2027" maxLength={4000}
+          className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30" />
+        <Button type="submit" variant="outline" disabled={!value.trim() || disabled}>
+          {pending ? "Checking change..." : "Request change"}
+        </Button>
+      </div>
+      {feedback && <p role="status" className="text-sm text-muted-foreground">{feedback}</p>}
+    </form>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { DegreeDraftCard } from "@/components/degree-draft-card";
+import { DegreeDraftCard, DegreeDraftEditor } from "@/components/degree-draft-card";
 import { ScheduleTimeFields } from "@/components/schedule-time-fields";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
@@ -12,7 +12,8 @@ import "katex/dist/katex.min.css";
 import type { DegreePlan, DegreePlanSettings } from "@/lib/degree-planner";
 import { mergeDegreePlan } from "@/lib/save-degree-plan";
 import { Button } from "@/components/ui/button";
-import { calculateCumulativeGpa, calculateGpaTotals, calculateTotalCredits, generateId, getCourseColor, getSemesterStatus, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
+import { advisorStudentContext } from "@/lib/advisor-student-context";
+import { generateId, getCourseColor, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
 
 interface Message { role: "user" | "assistant"; content: string; inDraft?: boolean }
 interface ProposedChange { action: "add" | "remove" | "update_meeting" | "set_grade" | "set_major" | "set_minor"; term?: "fall" | "spring" | "summer"; year?: number; code?: string; title?: string; credits?: number; conditionalOn?: string[]; grade?: string; value?: string; daysOfWeek?: number[]; startTime?: string; endTime?: string; location?: string }
@@ -105,32 +106,6 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   const voiceBaseRef = useRef("");
   const voiceTranscriptRef = useRef("");
 
-  function getStudentContext() {
-    const profile = loadProfile();
-    const planned = loadSchedules();
-    const past = loadPastSchedules();
-    const currentSemester = planned.find(({ term, year }) => getSemesterStatus(term, year) === "current");
-    const { qualityPoints, gradedCredits } = calculateGpaTotals([...past, ...planned]);
-    const plannedInProgressCredits = planned.flatMap(({ courses }) => courses).filter((course) => course.grade === null).reduce((sum, course) => sum + course.credits, 0);
-    return JSON.stringify({
-      profile: profile ? { major: profile.major, minor: profile.minor, specialization: profile.specialization } : null,
-      careerSummary: {
-        cumulativeGpa: calculateCumulativeGpa([...past, ...planned]),
-        cumulativeQualityPoints: qualityPoints,
-        cumulativeGpaCredits: gradedCredits,
-        totalCareerCredits: calculateTotalCredits(past) + calculateTotalCredits(planned) + plannedInProgressCredits,
-        gradingScale: GRADE_OPTIONS.map(({ letter, points }) => ({ grade: letter, points })),
-      },
-      selectedScheduleSemester: selectedSemester ? { term: selectedSemester.term, year: selectedSemester.year } : null,
-      currentSemester: currentSemester ? {
-        term: currentSemester.term,
-        year: currentSemester.year,
-        courses: currentSemester.courses.map(({ code, title, credits, grade, gradePoints }) => ({ code, title, credits, grade, gradePoints })),
-      } : null,
-      plannedSemesters: planned.map(({ term, year, courses }) => ({ term, year, courses: courses.map(({ code, title, transcriptTitle, credits, grade, gradePoints, daysOfWeek, startTime, endTime, location }) => ({ code, title, transcriptTitle, credits, grade, gradePoints, daysOfWeek, startTime, endTime, location })) })),
-      completedSemesters: past.map(({ term, year, courses }) => ({ term, year, courses: courses.map(({ code, title, credits, grade, gradePoints }) => ({ code, title, credits, grade, gradePoints })) })),
-    });
-  }
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -188,7 +163,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     }
     const report = insideDraft ? setDraftFeedback : setError;
     setLoading(true);
-    const studentContext = getStudentContext();
+    const studentContext = advisorStudentContext(selectedSemester);
     const selectedDraftTerm = degreeDraft?.plan.terms.find(({ term, year }) => `${year}-${term}` === draftTerm)
       ?? degreeDraft?.plan.terms[0];
     const history = messages.filter((item) =>
@@ -206,7 +181,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Advisor request failed.");
-      const currentContext = getStudentContext();
+      const currentContext = advisorStudentContext(selectedSemester);
       proposalContext.current = currentContext === studentContext && data.proposal ? studentContext : null;
       setProposal(proposalContext.current ? data.proposal : null);
       setMinorCandidates(data.minorCandidates ?? []);
@@ -299,7 +274,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   }
 
   function applyDegreePlan(plan: DegreePlan) {
-    if (degreeDraft?.context !== getStudentContext()) {
+    if (degreeDraft?.context !== advisorStudentContext(selectedSemester)) {
       setDegreeDraft(null);
       setError("Your Career data changed. Generate a new degree plan before saving.");
       return;
@@ -314,7 +289,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
       setError("");
       const reply: Message = { role: "assistant", content: updated.added
         ? `Added ${updated.added} courses to your planned semesters.` : "These courses are already in your plan." };
-      replyContexts.current.set(reply, getStudentContext());
+      replyContexts.current.set(reply, advisorStudentContext(selectedSemester));
       setMessages((current) => [...current, reply]);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not save the degree plan.");
@@ -324,7 +299,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   function applyProposal() {
     const changes = proposal;
     if (!changes?.length) return;
-    if (proposalContext.current !== getStudentContext()) {
+    if (proposalContext.current !== advisorStudentContext(selectedSemester)) {
       setProposal(null);
       setError("Your Career data changed. Ask the Advisor to refresh the proposal.");
       return;
@@ -394,7 +369,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     saveProfile(profile);
     setProposal(null);
     const reply: Message = { role: "assistant", content: "Done. I saved the requested changes." };
-    replyContexts.current.set(reply, getStudentContext());
+    replyContexts.current.set(reply, advisorStudentContext(selectedSemester));
     setMessages((current) => [...current, reply]);
   }
 
@@ -446,19 +421,9 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                   specialization={degreeDraft.settings.specialization} totalCredits={degreeDraft.totalCredits}
                   assumptions={degreeDraft.assumptions} note={degreeDraft.note} selectedTerm={draftTerm}
                   onSelectTerm={setDraftTerm} onSave={applyDegreePlan} onDelete={() => setDegreeDraft(null)} disabled={loading}>
-                  <form className="space-y-2 border-t border-border pt-3"
-                    onSubmit={(event) => void sendMessage(event, draftInput, true)}>
-                    <label htmlFor="advisor-draft-request" className="text-sm font-medium">Adjust this draft</label>
-                    <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
-                      <input id="advisor-draft-request" value={draftInput} onChange={(event) => setDraftInput(event.target.value)}
-                        placeholder="e.g. Move Chemistry to Spring 2027"
-                        className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30" />
-                      <Button type="submit" variant="outline" disabled={!draftInput.trim() || loading}>
-                        {draftPending ? "Checking change…" : "Request change"}
-                      </Button>
-                    </div>
-                    {draftFeedback && <p role="status" className="text-sm text-muted-foreground">{draftFeedback}</p>}
-                  </form>
+                  <DegreeDraftEditor value={draftInput} onChange={setDraftInput}
+                    onSubmit={() => void sendMessage(undefined, draftInput, true)}
+                    disabled={loading} pending={draftPending} feedback={draftFeedback} />
                 </DegreeDraftCard>
               </div>
             )}

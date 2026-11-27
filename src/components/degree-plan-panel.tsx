@@ -1,6 +1,6 @@
 "use client";
 
-import { DegreeDraftCard } from "@/components/degree-draft-card";
+import { DegreeDraftCard, DegreeDraftEditor } from "@/components/degree-draft-card";
 import { StyledSelect } from "@/components/ui/styled-select";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Check, ChevronDown, ListChecks, Search, SlidersHorizontal } from "lucide-react";
@@ -8,14 +8,15 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { degreeAudit, makeDegreePlans, DegreePlan } from "@/lib/degree-planner";
+import type { degreeAudit, makeDegreePlans, DegreePlan, DegreePlanSettings } from "@/lib/degree-planner";
 import type { PlannerInput } from "@/lib/degree-planner";
+import { advisorStudentContext } from "@/lib/advisor-student-context";
 import { MAX_COUNTED_COURSES, MAX_SUMMER_TERMS, semesterLimits } from "@/lib/semester-load";
 import { mergeDegreePlan } from "@/lib/save-degree-plan";
 import { getSemesterStatus, loadPastSchedules, loadProfile, loadSchedules, type SemesterSchedule } from "@/lib/store";
 
 type Audit = ReturnType<typeof degreeAudit>;
-type Drafts = ReturnType<typeof makeDegreePlans> & { note: string; specialization?: string };
+type Drafts = ReturnType<typeof makeDegreePlans> & { note: string; specialization?: string; settings?: DegreePlanSettings };
 type SavedDraft = { result: Drafts; key: string; snapshot: string };
 type DraftWorkspace = {
   view: "requirements" | "drafts";
@@ -67,6 +68,10 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   const [audit, setAudit] = useState<Audit | null>(null);
   const [draft, setDraft] = useState<SavedDraft | null>(stored.draft ?? null);
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editInput, setEditInput] = useState("");
+  const [editFeedback, setEditFeedback] = useState("");
+  const [editHistory, setEditHistory] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [auditError, setAuditError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -117,7 +122,7 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   }, [major, context]);
 
   async function generate(summer = includeSummer, termLimit = summerTermLimit) {
-    if (loading) return;
+    if (loading || editing) return;
     const target = Number(targetSemesters);
     if (!Number.isInteger(target) || target < 1 || target > 24) {
       setMessage("Enter a target of 1–24 regular semesters.");
@@ -144,12 +149,68 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setDraft({ result: data, key: requestedKey, snapshot });
+      setEditHistory([]);
+      setEditInput("");
+      setEditFeedback("");
       setSelectedTerm("");
       setView("drafts");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not generate a draft.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function requestDraftChange() {
+    const plan = result?.plans[0];
+    const request = editInput.trim();
+    if (loading || editing || !plan || !result || !draft || !request) return;
+    const snapshot = JSON.stringify([loadProfile(), loadPastSchedules(), loadSchedules()]);
+    if (snapshot !== draft.snapshot) {
+      setEditFeedback("Your Career data changed. Generate a new draft before editing.");
+      return;
+    }
+    const studentContext = advisorStudentContext();
+    const focused = plan.terms.find(({ term, year }) => `${year}-${term}` === selectedTerm) ?? plan.terms[0];
+    const settings = result.settings ?? {
+      mode, maxCourses: Number(maxCourses), targetSemesters: Number(targetSemesters),
+      includeSummer, includeFrench, specialization: result.specialization ?? specialization,
+      maxSummerTerms: includeSummer && summerTermLimit !== "all" ? Number(summerTermLimit) : undefined,
+    };
+    setEditing(true);
+    setEditFeedback("");
+    try {
+      const response = await fetch("/api/advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: request, history: editHistory, studentContext, editDegreeDraft: true,
+          degreeDraft: { plan, settings, deadline: result.deadline,
+            focusedTerm: focused && { term: focused.term, year: focused.year } },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not edit the draft.");
+      if (advisorStudentContext() !== studentContext) {
+        setEditFeedback("Your Career data changed while Advisor was editing. Generate a new draft.");
+        return;
+      }
+      const updated = data.degreeDraft;
+      const answer = data.answer?.trim() || "No draft change was returned.";
+      if (updated) {
+        setDraft({ ...draft, result: {
+          plans: [updated.plan], settings: updated.settings, specialization: updated.settings.specialization,
+          deadline: updated.deadline, assumptions: updated.assumptions, note: updated.note ?? "",
+        } });
+      }
+      setEditHistory((history) => [...history, { role: "user" as const, content: request },
+        { role: "assistant" as const, content: answer }].slice(-10));
+      setEditInput("");
+      setEditFeedback(answer);
+    } catch (error) {
+      setEditFeedback(error instanceof Error ? error.message : "Could not edit the draft.");
+    } finally {
+      setEditing(false);
     }
   }
 
@@ -161,6 +222,9 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
   function deleteDraft(plan: DegreePlan) {
     if (!draft || draft.key !== draftKey) return;
     setDraft(null);
+    setEditHistory([]);
+    setEditInput("");
+    setEditFeedback("");
     setMessage(`Deleted ${plan.label.toLowerCase()} draft.`);
   }
 
@@ -307,7 +371,10 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
           </Card> : result ? result.plans[0] ? (
             <DegreeDraftCard plan={result.plans[0]} deadline={result.deadline} specialization={result.specialization}
               totalCredits={audit?.totalCredits} assumptions={result.assumptions} note={result.note}
-              selectedTerm={selectedTerm} onSelectTerm={setSelectedTerm} onSave={save} onDelete={deleteDraft} disabled={loading} />
+              selectedTerm={selectedTerm} onSelectTerm={setSelectedTerm} onSave={save} onDelete={deleteDraft} disabled={loading || editing}>
+              <DegreeDraftEditor value={editInput} onChange={setEditInput} onSubmit={() => void requestDraftChange()}
+                disabled={loading || editing} pending={editing} feedback={editFeedback} />
+            </DegreeDraftCard>
           ) : <p role="status" className="text-sm text-muted-foreground">{result.assumptions} {result.note}</p> : <Card><CardContent className="space-y-3 p-5 text-sm text-muted-foreground">
             <p>{loading ? "Building your degree plan..." : "Generate a degree plan to see your term workloads and projected finish date."}</p>
             {!loading && <a href="#plan-settings" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
@@ -321,15 +388,16 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
             <CardTitle className="flex items-center gap-2 text-base"><SlidersHorizontal className="size-4 text-muted-foreground" aria-hidden="true" /> Plan settings</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(event) => { event.preventDefault(); void generate(); }} className="space-y-4">
+            <form onSubmit={(event) => { event.preventDefault(); void generate(); }}>
+              <fieldset disabled={editing} className="min-w-0 space-y-4">
               {!!audit?.specializations.length && <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
                 Specialization or concentration
-                <StyledSelect label="Specialization or concentration" triggerClassName="h-11" value={specialization} onValueChange={onSpecializationChange}
+                <StyledSelect label="Specialization or concentration" triggerClassName="h-11" value={specialization} disabled={editing} onValueChange={onSpecializationChange}
                     options={[{ value: "", label: "Choose an option" }, ...audit.specializations.map((name) => ({ value: name, label: name }))]} />
               </label>}
               <label className="grid gap-1.5 text-sm font-medium text-muted-foreground">
                 Planning style
-                <StyledSelect label="Planning style" triggerClassName="h-11" value={mode}
+                <StyledSelect label="Planning style" triggerClassName="h-11" value={mode} disabled={editing}
                   options={[{ value: "earlier", label: "Graduate sooner" }, { value: "balanced", label: "Balanced workload" }]}
                   onValueChange={(value) => setMode(value as DraftWorkspace["mode"])} />
               </label>
@@ -360,9 +428,10 @@ export function DegreePlanPanel({ major, minor, specialization, onSpecialization
                 Preferences (optional)
                 <Input className="h-11 text-foreground" value={preferences} maxLength={2000} onChange={(event) => setPreferences(event.target.value)} placeholder="For example, favor AI electives" />
               </label>
-              <Button type="submit" className="h-11 w-full justify-between" disabled={loading || !audit}>
+              <Button type="submit" className="h-11 w-full justify-between" disabled={loading || editing || !audit}>
                 {loading ? "Building draft..." : "Generate degree plan"}<ArrowRight className="size-4" aria-hidden="true" />
               </Button>
+              </fieldset>
             </form>
           </CardContent>
         </Card>
