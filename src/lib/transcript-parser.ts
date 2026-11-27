@@ -154,5 +154,8 @@ export function gradeToPoints(grade: string): number | null {
     "D+": 1.33, D: 1.0, "D-": 0.67, F: 0.0,
     P: null, W: null, I: null, NG: null,
   };
-  return map[grade.toUpperCase()] ?? null;
+  const normalizedGrade = grade.trim().toUpperCase();
+  return Object.prototype.hasOwnProperty.call(map, normalizedGrade)
+    ? map[normalizedGrade]
+    : null;
 }
