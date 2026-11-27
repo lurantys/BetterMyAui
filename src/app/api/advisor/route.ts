@@ -414,7 +414,7 @@ export async function POST(request: Request) {
   const standardSemesterRequest = /^(?:(?:can|could) you )?(?:please )?(?:build|make|plan|recommend|suggest|create|give)(?: me)? (?:a |some |my )?(?:(?:next )?semester plan|(?:some )?courses|(?:my )?next (?:semester|term))(?: for (?:my |the )?(?:next (?:semester|term)|(?:spring|summer|fall) 20\d{2}))?[.!?]*$/i.test(message);
   const directSemesterRequest = !body.editDegreeDraft && (standardSemesterRequest || termOnlyReply);
   const isSemesterRequest = !requestsScheduleEdit && (directSemesterRequest || subjectSwap !== null
-    || /\b(?:plan|suggest|recommend|balanced|semester|courses?\s+should\s+I\s+consider)\b/i.test(message));
+    || /\b(?:plan|suggest|recommend|balanced|courses?\s+should\s+I\s+consider)\b/i.test(message));
   const planningContext = {
     major: degreeProgram?.name ?? effectiveMajor ?? null,
     minor: studentData.profile?.minor ?? null,
