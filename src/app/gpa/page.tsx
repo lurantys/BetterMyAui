@@ -538,9 +538,12 @@ export default function CareerPage() {
   const completedSchedules = allSchedules.filter(
     (semester) => semester._source === "past" || getSemesterStatus(semester.term, semester.year) === "past"
   );
+  const gpaSchedules = allSchedules.filter(
+    (semester) => semester._source === "past" || getSemesterStatus(semester.term, semester.year) !== "planned"
+  );
   const cumulativeGpa = useMemo(
-    () => calculateCumulativeGpa(completedSchedules),
-    [completedSchedules]
+    () => calculateCumulativeGpa(gpaSchedules),
+    [gpaSchedules]
   );
   const earnedCredits = calculateTotalCredits(completedSchedules.map(({ courses }) => ({
     courses: courses.filter(({ grade }) =>
