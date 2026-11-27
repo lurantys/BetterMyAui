@@ -1,5 +1,12 @@
 export const MAX_COUNTED_COURSES = 6;
 export const MAX_SEMESTER_CREDITS = 21;
+export const MAX_SUMMER_TERMS = 12;
+
+export function semesterLimits(term?: string) {
+  return term === "summer"
+    ? { credits: 10, counted: 3 }
+    : { credits: MAX_SEMESTER_CREDITS, counted: MAX_COUNTED_COURSES };
+}
 
 export function courseKey(code: string) {
   return code.replace(/\s+/g, "").toUpperCase();

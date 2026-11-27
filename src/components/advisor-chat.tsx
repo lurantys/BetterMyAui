@@ -1,5 +1,6 @@
 "use client";
 
+import { DegreeDraftCard } from "@/components/degree-draft-card";
 import { ScheduleTimeFields } from "@/components/schedule-time-fields";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
@@ -8,12 +9,12 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import type { DegreePlan } from "@/lib/degree-planner";
+import type { DegreePlan, DegreePlanSettings } from "@/lib/degree-planner";
 import { mergeDegreePlan } from "@/lib/save-degree-plan";
 import { Button } from "@/components/ui/button";
 import { calculateCumulativeGpa, calculateGpaTotals, calculateTotalCredits, generateId, getCourseColor, getSemesterStatus, GRADE_OPTIONS, loadPastSchedules, loadProfile, loadSchedules, savePastSchedules, saveProfile, saveSchedules } from "@/lib/store";
 
-interface Message { role: "user" | "assistant"; content: string }
+interface Message { role: "user" | "assistant"; content: string; inDraft?: boolean }
 interface ProposedChange { action: "add" | "remove" | "update_meeting" | "set_grade" | "set_major" | "set_minor"; term?: "fall" | "spring" | "summer"; year?: number; code?: string; title?: string; credits?: number; conditionalOn?: string[]; grade?: string; value?: string; daysOfWeek?: number[]; startTime?: string; endTime?: string; location?: string }
 interface MinorCandidate { name: string; matchedCourses: number; matchedRequiredCourses: number; evidenceCourses: string[]; confidence: "strong" | "possible" }
 interface SpeechResultEvent { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }
@@ -86,7 +87,12 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
   }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [degreeDraft, setDegreeDraft] = useState<{ plans: DegreePlan[]; context: string } | null>(null);
+  const [semesterDraft, setSemesterDraft] = useState<{ term: string; year: number; courseCodes: string[] } | null>(null);
+  const [degreeDraft, setDegreeDraft] = useState<{ plan: DegreePlan; settings: DegreePlanSettings; deadline: string; assumptions: string; note?: string; totalCredits?: number | number[]; context: string } | null>(null);
+  const [draftTerm, setDraftTerm] = useState("");
+  const [draftInput, setDraftInput] = useState("");
+  const [draftFeedback, setDraftFeedback] = useState("");
+  const [draftPending, setDraftPending] = useState(false);
   const [proposal, setProposal] = useState<ProposedChange[] | null>(null);
   const replyContexts = useRef(new WeakMap<Message, string>());
   const proposalContext = useRef<string | null>(null);
@@ -166,17 +172,25 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
     };
   }, []);
 
-  async function sendMessage(event?: FormEvent, suggested?: string) {
+  async function sendMessage(event?: FormEvent, suggested?: string, insideDraft = false) {
     event?.preventDefault();
     const content = (suggested ?? input).trim();
     if (!content || loading) return;
-    const next = [...messages, { role: "user" as const, content }];
+    const next = [...messages, { role: "user" as const, content, inDraft: insideDraft }];
     setMessages(next);
-    setInput("");
-    setError("");
+    if (insideDraft) {
+      setDraftInput("");
+      setDraftFeedback("");
+      setDraftPending(true);
+    } else {
+      setInput("");
+      setError("");
+    }
+    const report = insideDraft ? setDraftFeedback : setError;
     setLoading(true);
-    setDegreeDraft(null);
     const studentContext = getStudentContext();
+    const selectedDraftTerm = degreeDraft?.plan.terms.find(({ term, year }) => `${year}-${term}` === draftTerm)
+      ?? degreeDraft?.plan.terms[0];
     const history = messages.filter((item) =>
       item.role === "user" || replyContexts.current.get(item) === studentContext
     );
@@ -184,7 +198,11 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
       const response = await fetch("/api/advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content, history, studentContext }),
+        body: JSON.stringify({ message: content, history, studentContext, editDegreeDraft: insideDraft, semesterDraft,
+          degreeDraft: degreeDraft?.context === studentContext
+            ? { plan: degreeDraft.plan, settings: degreeDraft.settings, deadline: degreeDraft.deadline,
+              focusedTerm: selectedDraftTerm && { term: selectedDraftTerm.term, year: selectedDraftTerm.year } } : undefined,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Advisor request failed.");
@@ -193,19 +211,29 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
       setProposal(proposalContext.current ? data.proposal : null);
       setMinorCandidates(data.minorCandidates ?? []);
       if (currentContext !== studentContext) {
-        setInput(content);
-        setError("Your Career data changed while the Advisor was responding. Send the message again to use the latest data.");
+        if (insideDraft) setDraftInput(content);
+        else setInput(content);
+        report("Your Career data changed while the Advisor was responding. Send the message again to use the latest data.");
         return;
       }
-      if (Array.isArray(data.degreePlans)) setDegreeDraft({ plans: data.degreePlans, context: studentContext });
+      if (data.semesterDraft) setSemesterDraft(data.semesterDraft);
+      if (data.degreeDraft) {
+        setDegreeDraft({ ...data.degreeDraft, context: studentContext });
+        if (!insideDraft) {
+          setDraftTerm("");
+          setDraftFeedback("");
+        }
+      }
       if (!data.answer?.trim()) return;
-      const reply: Message = { role: "assistant", content: data.answer };
+      if (insideDraft) setDraftFeedback(data.answer);
+      const reply: Message = { role: "assistant", content: data.answer, inDraft: insideDraft };
       replyContexts.current.set(reply, studentContext);
       setMessages((current) => [...current, reply]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Advisor request failed.");
+      report(err instanceof Error ? err.message : "Advisor request failed.");
     } finally {
       setLoading(false);
+      setDraftPending(false);
     }
   }
 
@@ -399,26 +427,39 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                 <h2 className="text-2xl font-semibold text-foreground">What would you like to plan?</h2>
                 <p className="mt-3 text-sm text-muted-foreground">Ask about courses, prerequisites, your major, or changes to your semesters.</p>
                 <div className="mt-7 flex flex-wrap justify-center gap-2">
-                  {["What courses should I consider next?", "Check prerequisites for my planned courses", "Build a full degree plan"].map((suggestion) => (
+                  {["What courses should I consider next?", "Check prerequisites for my planned courses"].map((suggestion) => (
                     <button key={suggestion} onClick={() => void sendMessage(undefined, suggestion)} className="rounded-full border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">{suggestion}</button>
                   ))}
                 </div>
               </div>
             )}
-            {messages.map((message, index) => (
+            {messages.filter((message) => !message.inDraft).map((message, index) => (
               <div key={`${message.role}-${index}`} className={`advisor-chat-enter group flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`min-w-0 max-w-[94%] break-words text-sm leading-7 sm:max-w-[88%] ${message.role === "user" ? "whitespace-pre-wrap rounded-[1.6rem] bg-accent px-5 py-3 text-foreground" : "text-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_li]:ml-5 [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc"}`}>
                   {message.role === "assistant" ? <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{message.content}</ReactMarkdown> : message.content}
                 </div>
               </div>
             ))}
-            {degreeDraft && degreeDraft.plans.some((plan) => plan.terms.length > 0) && (
-              <div className="flex flex-wrap gap-2">
-                {degreeDraft.plans.filter((plan) => plan.terms.length > 0).map((plan) => <Button
-                  key={plan.label} size="sm" variant="outline" disabled={!plan.canSave} onClick={() => applyDegreePlan(plan)}
-                >
-                  Save {plan.label.toLowerCase()} draft
-                </Button>)}
+            {degreeDraft && (
+              <div className="w-full max-w-2xl">
+                <DegreeDraftCard plan={degreeDraft.plan} deadline={degreeDraft.deadline}
+                  specialization={degreeDraft.settings.specialization} totalCredits={degreeDraft.totalCredits}
+                  assumptions={degreeDraft.assumptions} note={degreeDraft.note} selectedTerm={draftTerm}
+                  onSelectTerm={setDraftTerm} onSave={applyDegreePlan} onDelete={() => setDegreeDraft(null)} disabled={loading}>
+                  <form className="space-y-2 border-t border-border pt-3"
+                    onSubmit={(event) => void sendMessage(event, draftInput, true)}>
+                    <label htmlFor="advisor-draft-request" className="text-sm font-medium">Adjust this draft</label>
+                    <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
+                      <input id="advisor-draft-request" value={draftInput} onChange={(event) => setDraftInput(event.target.value)}
+                        placeholder="e.g. Move Chemistry to Spring 2027"
+                        className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30" />
+                      <Button type="submit" variant="outline" disabled={!draftInput.trim() || loading}>
+                        {draftPending ? "Checking change…" : "Request change"}
+                      </Button>
+                    </div>
+                    {draftFeedback && <p role="status" className="text-sm text-muted-foreground">{draftFeedback}</p>}
+                  </form>
+                </DegreeDraftCard>
               </div>
             )}
             {proposal && proposal.length > 0 && (
@@ -454,7 +495,7 @@ export function AdvisorChat({ compact = false, selectedSemester, onSchedulesAppl
                 </div>
               </div>
             )}
-            {loading && <div className="advisor-chat-enter flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />Thinking…</div>}
+            {loading && !draftPending && <div className="advisor-chat-enter flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />Thinking…</div>}
           </div>
           {error && <p role="alert" className="px-5 pb-2 text-sm text-destructive">{error}</p>}
           <form onSubmit={(event) => void sendMessage(event)} className="relative mx-auto flex w-full max-w-3xl shrink-0 items-center gap-1 rounded-[1.8rem] border border-border bg-card px-2 py-2 shadow-lg shadow-black/5 transition focus-within:border-primary/50 sm:items-end sm:gap-2 sm:px-4 sm:py-3">

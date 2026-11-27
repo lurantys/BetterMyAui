@@ -733,7 +733,73 @@
           "credits": 3
         }
       ],
-      "groups": {}
+      "groups": {
+        "Business Administration": {
+          "label": "Business Administration",
+          "credits": 15,
+          "forProgram": "BSCSC",
+          "sourceCatalog": "2023-2024",
+          "source": "academic-catalog-2023-2024.pdf, page 148",
+          "courses": [],
+          "groups": {
+            "Required Courses": {
+              "label": "Required Courses",
+              "credits": 9,
+              "courses": [
+                {
+                  "code": "ACC 2301",
+                  "title": "Accounting Principles I",
+                  "credits": 3
+                },
+                {
+                  "code": "FIN 3301",
+                  "title": "Principles of Finance",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 3301",
+                  "title": "Principles of Management",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            },
+            "Course Options": {
+              "label": "Business Administration Electives",
+              "credits": 6,
+              "choose": 2,
+              "courses": [
+                {
+                  "code": "ACC 2302",
+                  "title": "Accounting Principles II",
+                  "credits": 3
+                },
+                {
+                  "code": "GBU 3311",
+                  "title": "Quantitative Methods in Business",
+                  "credits": 3
+                },
+                {
+                  "code": "GBU 4308",
+                  "title": "Foundations of E-Commerce",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 3302",
+                  "title": "Entrepreneurship",
+                  "credits": 3
+                },
+                {
+                  "code": "MGT 4303",
+                  "title": "Operations Management",
+                  "credits": 3
+                }
+              ],
+              "groups": {}
+            }
+          }
+        }
+      }
     },
     "freeElectives": {
       "label": "Free Electives",

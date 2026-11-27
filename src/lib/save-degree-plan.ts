@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import type { DegreePlan } from "./degree-planner";
-import { courseKey, MAX_COUNTED_COURSES, MAX_SEMESTER_CREDITS, semesterLoad } from "./semester-load";
+import { courseKey, semesterLimits, semesterLoad } from "./semester-load";
 import { generateId, getCourseColor, getSemesterStatus, type SemesterSchedule } from "./store";
 
 export function mergeDegreePlan(plan: DegreePlan, schedules: SemesterSchedule[]) {
@@ -23,7 +23,8 @@ export function mergeDegreePlan(plan: DegreePlan, schedules: SemesterSchedule[])
     if (!additions.length) continue;
     const next = { ...existing, courses: [...existing.courses, ...additions] };
     const load = semesterLoad(next.courses.filter(({ grade }) => grade?.toUpperCase() !== "W"));
-    if (load.counted > MAX_COUNTED_COURSES || load.credits > MAX_SEMESTER_CREDITS) {
+    const limits = semesterLimits(term.term);
+    if (load.counted > limits.counted || load.credits > limits.credits) {
       throw new Error("The draft and saved courses exceed a semester load limit.");
     }
     if (index < 0) updated.push(next);
