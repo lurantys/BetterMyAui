@@ -704,8 +704,8 @@
       "level": "undergraduate",
       "prerequisite_raw": null,
       "prerequisite_courses": [],
-      "corequisite_raw": null,
-      "corequisite_courses": [],
+      "corequisite_raw": "BTC 3355",
+      "corequisite_courses": ["BTC 3355"],
       "classification_requirement": null,
       "other_requirement_notes": null,
       "description": "Co-requisite: BTC 3355 This course focuses on applied biotechnology with a focus on medicine, agriculture and applied research. The course will be combined of lectures and a series of seminars addressed by specialists from diverse disciplines and specialties that relate to biotechnology. The course will cover most popular biotech techniques (advanced genome sequencing, flow cytometry, cell transfection, molecular labelling, etc.) as well as the regulations in different fields of biotechnology, with an emphasis on biosafety, biosecurity, bioethics, regulations (including in clinical trials), and biotech certifications (GMP, GLP, etc.). Field trips to national companies in medical, pharmaceutical and agro-food industries are planned on this course. BTC 4355 can be taken as a science course and is an excellent complement for students who opt for a thematic area in biotechnology. Chemistry (CHE)"
@@ -2725,7 +2725,7 @@
       "title": "Principles of Finance",
       "credits": 3.0,
       "level": "undergraduate",
-      "prerequisite_raw": "ACC 2302, ECO 2302; or ACC 2301, EGR 2302 (SSE); or ACC",
+      "prerequisite_raw": "ACC 2302, ECO 2302; or ACC 2301, EGR 2302 (SSE); or ACC 2301, ECO 2302 (SSAH)",
       "prerequisite_courses": [
         "ACC 2302",
         "ECO 2302",

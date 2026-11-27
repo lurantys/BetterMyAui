@@ -448,28 +448,112 @@
     "concentrations": {
       "label": "Engineering Thematic Area",
       "credits": 9,
-      "courses": [
-        {
-          "requirement": "Engineering Thematic Area Course 1",
-          "credits": 3
+      "courses": [],
+      "groups": {
+        "Manufacturing and Logistics Engineering": {
+          "label": "Manufacturing and Logistics Engineering",
+          "credits": 9,
+          "courses": [
+            {
+              "code": "MLE 3301",
+              "title": "Manufacturing/Supply Chain Management and Sustainability",
+              "credits": 3
+            },
+            {
+              "code": "MLE 4305",
+              "title": "Transportation and Logistics",
+              "credits": 3
+            },
+            {
+              "code": "MLE 3305",
+              "title": "Quality Management and Control",
+              "credits": 3
+            }
+          ],
+          "groups": {}
         },
-        {
-          "requirement": "Engineering Thematic Area Course 2",
-          "credits": 3
+        "Decision Support Systems Engineering": {
+          "label": "Decision Support Systems Engineering",
+          "credits": 9,
+          "courses": [
+            {
+              "code": "EDS 3302",
+              "title": "Forecasting and Time Series",
+              "credits": 3
+            },
+            {
+              "code": "EDS 4304",
+              "title": "System Simulation",
+              "credits": 3
+            },
+            {
+              "code": "EDS 4306",
+              "title": "Non-linear Optimization",
+              "credits": 3
+            }
+          ],
+          "groups": {}
         },
-        {
-          "requirement": "Engineering Thematic Area Course 3",
-          "credits": 3
+        "BioTech": {
+          "label": "BioTech",
+          "credits": 9,
+          "courses": [
+            {
+              "code": "BIO 1401",
+              "title": "Principles of Biology",
+              "credits": 4
+            },
+            {
+              "code": "BIO 2301",
+              "title": "Cellular and Molecular Biology",
+              "credits": 3
+            },
+            {
+              "code": "BTC 4355",
+              "title": "Techniques and Regulations in Applied Biotechnology",
+              "credits": 3
+            }
+          ],
+          "groups": {}
+        },
+        "Finance": {
+          "label": "Finance",
+          "credits": 9,
+          "courses": [
+            {
+              "code": "FIN 3301",
+              "title": "Principles of Finance",
+              "credits": 3
+            }
+          ],
+          "groups": {
+            "Electives": {
+              "label": "Finance electives",
+              "credits": 6,
+              "courses": [
+                {
+                  "code": "FIN 3303",
+                  "title": "Corporate Financial Management",
+                  "credits": 3
+                },
+                {
+                  "code": "FIN 4304",
+                  "title": "International Finance",
+                  "credits": 3
+                },
+                {
+                  "code": "GBU 3302",
+                  "title": "Business Law and Ethics",
+                  "credits": 3
+                }
+              ],
+              "groups": {},
+              "choose": 2
+            }
+          }
         }
-      ],
-      "groups": {},
-      "options": [
-        "Manufacturing and Logistics Engineering",
-        "Decision Support Systems Engineering",
-        "Finance",
-        "BioTech"
-      ],
-      "rule": "Choose a thematic area and complete its course slots."
+      },
+      "source": "academic-catalog-2024-2025-v2.pdf, pages 202-203, 229-230 and 247"
     },
     "minors": null,
     "freeElectives": {

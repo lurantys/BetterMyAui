@@ -493,9 +493,11 @@ option {
 
 @media (prefers-reduced-motion: no-preference) {
   .styled-select-list { animation: select-open 130ms ease-out both; }
-  .gpa-reveal { animation: gpa-reveal 220ms ease-out both; }
-  .gpa-conceal { animation: gpa-conceal 175ms ease-out both; }
+  .gpa-reveal { animation: gpa-reveal 240ms ease-out both; }
+  .gpa-mask { transition: opacity 180ms ease-out; }
 }
+
+.gpa-mask { filter: blur(0.21em); }
 
 @keyframes select-open {
   from { opacity: 0; transform: scale(0.98); }
@@ -503,13 +505,8 @@ option {
 }
 
 @keyframes gpa-reveal {
-  from { filter: blur(4px); opacity: 0.35; }
+  from { filter: blur(0.21em); opacity: 0; }
   to { filter: blur(0); opacity: 1; }
-}
-
-@keyframes gpa-conceal {
-  from { filter: blur(4px); opacity: 0.35; }
-  to { filter: blur(1.5px); opacity: 1; }
 }
 
 /* Shared interaction motion. Keep layout, focus and hit targets stable. */

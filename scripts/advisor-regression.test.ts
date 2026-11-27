@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { POST } from "../src/app/api/advisor/route";
+import { degreeAudit, makeDegreePlans } from "../src/lib/degree-planner";
 import { countsTowardCourseLimit } from "../src/lib/semester-load";
 
 test("Advisor recommends, revises, and prepares a Career proposal for a first-year student", async (t) => {
@@ -138,4 +139,59 @@ test("Advisor can swap in a catalog elective outside the declared minor", async 
   const blocked = await swap(prerequisites.filter((code) => code !== "EGR 2302"));
   assert.equal(blocked.semesterDraft, undefined);
   assert.match(blocked.answer, /MKT 3301 requires.*EGR 2302/);
+});
+
+test("Every EMS thematic area can be audited and scheduled", () => {
+  const student = { major: "Engineering and Management Science", semesters: [] };
+  const now = { term: "fall", year: 2026 } as const;
+  const requiredCourses = new Map([
+    ["Manufacturing and Logistics Engineering", ["MLE 3301", "MLE 4305", "MLE 3305"]],
+    ["Decision Support Systems Engineering", ["EDS 3302", "EDS 4304", "EDS 4306"]],
+    ["BioTech", ["BIO 1401", "BIO 2301", "BTC 4355"]],
+    ["Finance", ["FIN 3301"]],
+  ]);
+  assert.deepEqual(degreeAudit(student, now).specializations.sort(), [...requiredCourses.keys()].sort());
+  for (const [specialization, expected] of requiredCourses) {
+    const [plan] = makeDegreePlans({ ...student, specialization }, [], now).plans;
+    assert(plan?.finish, specialization);
+    assert.deepEqual(plan.remaining, []);
+    const codes = new Set(plan.terms.flatMap(({ courses }) => courses.map(({ code }) => code)));
+    for (const code of expected) assert(codes.has(code), `${specialization}: ${code}`);
+  }
+});
+
+test("An explicit AI specialization request generates a draft over the saved specialization", async (t) => {
+  const apiKey = process.env.NVIDIA_API_KEY;
+  process.env.NVIDIA_API_KEY = "regression-test";
+  t.after(() => {
+    if (apiKey === undefined) delete process.env.NVIDIA_API_KEY;
+    else process.env.NVIDIA_API_KEY = apiKey;
+  });
+
+  t.mock.method(globalThis, "fetch", async (_input: unknown, init?: RequestInit) => {
+    const request = JSON.parse(String(init?.body));
+    if (!request.tools) return Response.json({ choices: [{ message: { content: '{"preferredCodes":[]}' } }] });
+    assert.equal(request.tool_choice, "auto");
+    return Response.json({ choices: [{ message: { tool_calls: [{ function: {
+      name: "plan_degree",
+      arguments: JSON.stringify({ action: "generate", specialization: "Artificial Intelligence" }),
+    } }] } }] });
+  });
+
+  const response = await POST(new Request("http://localhost/api/advisor", {
+    method: "POST",
+    body: JSON.stringify({
+      message: "generate a degree plan for me with an AI specialization",
+      studentContext: JSON.stringify({
+        profile: { major: "Computer Science", minor: "Business Administration", specialization: "Software Engineering" },
+      }),
+      degreeDraft: { plan: { terms: [], review: [] }, deadline: "Spring 2030",
+        settings: { specialization: "Software Engineering", maxCourses: 5, includeSummer: true, maxSummerTerms: 1 } },
+    }),
+  }));
+  assert.equal(response.status, 200);
+  const { degreeDraft } = await response.json();
+  assert.equal(degreeDraft.settings.specialization, "Artificial Intelligence");
+  assert.equal(degreeDraft.settings.maxCourses, 5);
+  assert.equal(degreeDraft.settings.maxSummerTerms, 1);
 });

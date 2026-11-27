@@ -29,13 +29,15 @@ export function degreePreferences(request: string) {
   };
 }
 
-export async function createDegreePlan(input: PlannerInput, instructions: string) {
+export async function createDegreePlan(input: PlannerInput, instructions: string, resolvedSpecialization?: string | null) {
   const audit = degreeAudit(input);
   const request = instructions.trim().slice(0, 2000);
   const options = {
     ...degreePreferences(request),
     ...input,
-    specialization: audit.specializations.find((name) => request.toLowerCase().includes(name.toLowerCase())) ?? input.specialization,
+    specialization: resolvedSpecialization ?? (resolvedSpecialization === undefined
+      ? audit.specializations.find((name) => request.toLowerCase().includes(name.toLowerCase()))
+      : undefined) ?? input.specialization,
   };
 
   let preferredCodes = [...request.matchAll(/\b[A-Z]{2,5}\s*\d{4}(?:-L)?\b/g)].map(([code]) => code);

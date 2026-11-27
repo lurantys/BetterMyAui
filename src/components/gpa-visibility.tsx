@@ -18,10 +18,9 @@ export function GpaToggle({ revealed, onToggle }: { revealed: boolean; onToggle:
 }
 
 export function ConcealedGpa({ revealed, value, className }: { revealed: boolean; value: string; className?: string }) {
-  return <span className={cn("inline-block tabular-nums", className)}>
-    {revealed ? <span className="gpa-reveal inline-block">{value}</span> : (
-      <><span aria-hidden="true" className="gpa-conceal inline-block select-none tracking-widest text-muted-foreground blur-[1.5px]">••••</span>
-        <span className="sr-only">GPA hidden</span></>
-    )}
+  return <span className={cn("inline-grid tabular-nums", className)}>
+    <span aria-hidden="true" className={cn("gpa-mask col-start-1 row-start-1 select-none text-muted-foreground", revealed && "opacity-0")}>8.88</span>
+    {revealed ? <span className="gpa-reveal col-start-1 row-start-1">{value}</span>
+      : <span className="sr-only">GPA hidden</span>}
   </span>;
 }
